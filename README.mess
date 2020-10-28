@@ -1,0 +1,4 @@
+## About This
+This is a system presenting a protocol for "file systems" -- things that present a collection of "files," which are things that have several attributes, and a central data payload. Most notably this includes the OS filesystem, but can also be used to address other filesystem-like things like archives, object stores, etc. in the same manner.
+
+
