@@ -13,6 +13,8 @@
 (defclass host (depot) ())
 (defclass directory (depot entry) ())
 
+(defgeneric to-pathname (entry))
+
 (defmethod to-pathname ((entry entry))
   (let* ((name (attribute :name entry))
          (dotp (position #\. name :from-end T))
