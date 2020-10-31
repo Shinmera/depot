@@ -22,13 +22,14 @@
 (defclass entry () ())
 (defclass transaction () ())
 
-(defgeneric list-entries (system))
-(defgeneric query-entries (system &key))
-(defgeneric query-entry (system &key))
-(defgeneric entry (id system))
-(defgeneric entry-exists-p (id system))
-(defgeneric make-entry (system attributes))
+(defgeneric list-entries (depot))
+(defgeneric query-entries (depot &key))
+(defgeneric query-entry (depot &key))
+(defgeneric entry (id depot))
+(defgeneric entry-exists-p (id depot))
+(defgeneric make-entry (depot attributes))
 (defgeneric delete-entry (entry))
+(defgeneric entry-matches-p (entry attribute value))
 (defgeneric attributes (entry))
 (defgeneric (setf attributes) (attributes entry))
 (defgeneric attribute (name entry))
@@ -39,6 +40,7 @@
 (defgeneric open-entry (entry direction element-type &key))
 (defgeneric write-to (transaction sequence &key start end))
 (defgeneric read-from (transaction sequence &key start end))
+(defgeneric size (transaction))
 (defgeneric commit (transaction))
 (defgeneric abort (transaction))
 
@@ -71,13 +73,28 @@
   (loop for realizer being the hash-keys of *entry-realizers*
         thereis (realize-entry entry realizer)))
 
-(defun entry* (system &rest ids)
+(defun entry* (depot &rest ids)
   (loop for id in ids
-        do (setf system (entry id system)))
-  system)
+        do (setf depot (entry id depot)))
+  depot)
 
-(defmethod query-entry ((system depot) &rest args)
-  (first (apply #'query-entries system args)))
+(defmethod entry (id (depot depot))
+  (or (query-entry depot :id id)
+      (error 'no-such-entry :depot depot :id id)))
+
+(defmethod entry-exists-p (id (depot depot))
+  (not (null (query-entry depot :id id))))
+
+(defmethod query-entries ((depot depot) &rest args)
+  (flet ((matches-query (entry)
+           (loop for (attribute val) on args by #'cddr
+                 always (entry-matches-p entry attribute val))))
+    (loop for entry in (list-entries depot)
+          when (matches-query entry)
+          collect entry)))
+
+(defmethod query-entry ((depot depot) &rest args)
+  (first (apply #'query-entries depot args)))
 
 (defmethod attribute (name entry)
   (getf (attributes entry) name))
@@ -88,8 +105,31 @@
     (setf (attributes entry) attributes)
     value))
 
+(defmethod entry-matches-p ((entry entry) attribute value)
+  (equal value (attribute attribute entry)))
+
 (defmethod id ((entry entry))
   (getf (attributes entry) :id))
+
+(defmethod write-to ((entry entry) (vector vector) &key start end)
+  (with-open (tx entry :out (array-element-type vector))
+    (write-to tx vector :start start :end end)))
+
+(defmethod read-from ((entry entry) (vector vector) &key start end)
+  (with-open (tx entry :in (array-element-type vector))
+    (read-from tx vector :start start :end end)))
+
+(defmethod read-from ((entry entry) (target (eql 'byte)) &key)
+  (with-open (tx entry :in '(unsigned-byte 8))
+    (let ((array (make-array (size tx) :element-type '(unsigned-byte 8))))
+      (read-from tx array)
+      array)))
+
+(defmethod read-from ((entry entry) (target (eql 'character)) &key)
+  (with-open (tx entry :in 'character)
+    (let ((array (make-array (size tx) :element-type 'character)))
+      (read-from tx array)
+      array)))
 
 (defmacro with-open ((transaction entry direction element-type &rest args) &body body)
   `(let ((,transaction (open-entry ,entry ,direction ,element-type ,@args)))
