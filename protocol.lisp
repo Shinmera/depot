@@ -19,15 +19,17 @@
 
 (defclass realizer () ())
 (defclass depot () ())
-(defclass entry () ())
-(defclass transaction () ())
+(defclass entry ()
+  ((depot :initarg :depot :reader depot)))
+(defclass transaction ()
+  ((entry :initarg :entry :reader entry)))
 
 (defgeneric list-entries (depot))
 (defgeneric query-entries (depot &key))
 (defgeneric query-entry (depot &key))
 (defgeneric entry (id depot))
 (defgeneric entry-exists-p (id depot))
-(defgeneric make-entry (depot attributes))
+(defgeneric make-entry (depot &key))
 (defgeneric delete-entry (entry))
 (defgeneric entry-matches-p (entry attribute value))
 (defgeneric attributes (entry))
@@ -78,6 +80,47 @@
         do (setf depot (entry id depot)))
   depot)
 
+(defmacro with-open ((transaction entry direction element-type &rest args) &body body)
+  `(let ((,transaction (open-entry ,entry ,direction ,element-type ,@args)))
+     (restart-case
+         (unwind-protect
+              (let ((,transaction ,transaction))
+                ,@body)
+           (when ,transaction (commit ,transaction)))
+       (abort (&optional e)
+         :report "Abort the entry open."
+         (declare (ignore e))
+         (when ,transaction (abort ,transaction))))))
+
+;;;; Defaulting methods
+;;; Thanks to these only the following functions need to be implemented to complete the interfaces:
+;;;   DEPOT
+;;;   - LIST-ENTRIES
+;;;   - MAKE-ENTRY
+;;;   ENTRY
+;;;   - ATTRIBUTES
+;;;   - (SETF ATTRIBUTES)
+;;;   - DELETE-ENTRY
+;;;   - OPEN-ENTRY
+;;; All other functions /may/ be implemented in order to provide a more efficient interface.
+(defmethod list-entries ((depot depot))
+  (error 'unsupported-operation :operation 'list-entries :object depot))
+
+(defmethod make-entry ((depot depot) &key)
+  (error 'unsupported-operation :operation 'make-entry :object depot))
+
+(defmethod attributes ((entry entry))
+  (error 'unsupported-operation :operation 'attributes :object entry))
+
+(defmethod (setf attributes) (attributes (entry entry))
+  (error 'unsupported-operation :operation '(setf attributes) :object entry))
+
+(defmethod delete-entry ((entry entry))
+  (error 'unsupported-operation :operation 'delete-entry :object entry))
+
+(defmethod open-entry ((entry entry) direction element-type &key)
+  (error 'unsupported-operation :operation 'open-entry :object entry))
+
 (defmethod entry (id (depot depot))
   (or (query-entry depot :id id)
       (error 'no-such-entry :depot depot :id id)))
@@ -112,33 +155,21 @@
   (getf (attributes entry) :id))
 
 (defmethod write-to ((entry entry) (vector vector) &key start end)
-  (with-open (tx entry :out (array-element-type vector))
+  (with-open (tx entry :output (array-element-type vector))
     (write-to tx vector :start start :end end)))
 
 (defmethod read-from ((entry entry) (vector vector) &key start end)
-  (with-open (tx entry :in (array-element-type vector))
+  (with-open (tx entry :input (array-element-type vector))
     (read-from tx vector :start start :end end)))
 
 (defmethod read-from ((entry entry) (target (eql 'byte)) &key)
-  (with-open (tx entry :in '(unsigned-byte 8))
+  (with-open (tx entry :input '(unsigned-byte 8))
     (let ((array (make-array (size tx) :element-type '(unsigned-byte 8))))
       (read-from tx array)
       array)))
 
 (defmethod read-from ((entry entry) (target (eql 'character)) &key)
-  (with-open (tx entry :in 'character)
+  (with-open (tx entry :input 'character)
     (let ((array (make-array (size tx) :element-type 'character)))
       (read-from tx array)
       array)))
-
-(defmacro with-open ((transaction entry direction element-type &rest args) &body body)
-  `(let ((,transaction (open-entry ,entry ,direction ,element-type ,@args)))
-     (restart-case
-         (unwind-protect
-              (let ((,transaction ,transaction))
-                ,@body)
-           (when ,transaction (commit ,transaction)))
-       (abort (&optional e)
-         :report "Abort the entry open."
-         (declare (ignore e))
-         (when ,transaction (abort ,transaction))))))
