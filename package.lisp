@@ -6,5 +6,5 @@
 
 (defpackage #:org.shirakumo.depot
   (:use #:cl)
-  (:shadow #:abort #:directory)
+  (:shadow #:abort #:directory #:stream)
   (:export))

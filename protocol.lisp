@@ -22,7 +22,7 @@
 (defclass entry ()
   ((depot :initarg :depot :reader depot)))
 (defclass transaction ()
-  ((entry :initarg :entry :reader entry)))
+  ((entry :initarg :entry :reader target)))
 
 (defgeneric list-entries (depot))
 (defgeneric query-entries (depot &key))
@@ -136,7 +136,7 @@
           when (matches-query entry)
           collect entry)))
 
-(defmethod query-entry ((depot depot) &rest args)
+(defmethod query-entry ((depot depot) &rest args &key &allow-other-keys)
   (first (apply #'query-entries depot args)))
 
 (defmethod attribute (name entry)
@@ -162,13 +162,15 @@
   (with-open (tx entry :input (array-element-type vector))
     (read-from tx vector :start start :end end)))
 
-(defmethod read-from ((entry entry) (target (eql 'byte)) &key)
+(defmethod read-from ((entry entry) (target (eql 'byte)) &key start end)
+  (declare (ignore start end))
   (with-open (tx entry :input '(unsigned-byte 8))
     (let ((array (make-array (size tx) :element-type '(unsigned-byte 8))))
       (read-from tx array)
       array)))
 
-(defmethod read-from ((entry entry) (target (eql 'character)) &key)
+(defmethod read-from ((entry entry) (target (eql 'character)) &key start end)
+  (declare (ignore start end))
   (with-open (tx entry :input 'character)
     (let ((array (make-array (size tx) :element-type 'character)))
       (read-from tx array)

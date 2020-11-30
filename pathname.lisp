@@ -9,8 +9,14 @@
 (defvar *os-depot*)
 
 (defclass os-depot (depot) ())
-(defclass device (depot) ())
 (defclass host (depot) ())
+(defclass device (depot) ())
+
+(defmethod attributes ((depot host))
+  (list :id (id depot)))
+
+(defmethod attributes ((depot device))
+  (list :id (id depot)))
 
 (defgeneric to-pathname (entry))
 
@@ -45,10 +51,9 @@
 (defun from-pathname (pathname)
   (let ((depot *os-depot*)
         (pathname (merge-pathnames pathname *default-pathname-defaults*)))
-    (when (path-component-specific-p (pathname-host pathname))
-      (setf depot (query-entry depot :id (pathname-host pathname))))
+    (setf depot (query-entry depot :host (pathname-host pathname)))
     (when (path-component-specific-p (pathname-device pathname))
-      (setf depot (query-entry depot :id (pathname-device pathname))))
+      (setf depot (query-entry depot :device (pathname-device pathname))))
     (loop for dir in (rest (pathname-directory pathname))
           do (setf depot (entry dir depot)))
     (if (or (pathname-name pathname)
@@ -76,8 +81,8 @@
 
 (defmethod list-entries ((depot directory))
   (let* ((pathname (to-pathname depot))
-         (directories (directory (merge-pathnames (make-pathname :directory `(:relative ,*wild-component*) :name NIL :type NIL :version NIL) pathname)))
-         (files (directory (make-pathname :name "*" :type "*" :version (or #-(or allegro abcl xcl) "*") :defaults pathname)))
+         (directories (cl:directory (merge-pathnames (make-pathname :directory `(:relative :wild) :name NIL :type NIL :version NIL) pathname)))
+         (files (cl:directory (make-pathname :name "*" :type "*" :version (or #-(or allegro abcl xcl) :newest) :defaults pathname)))
          (entries ()))
     (dolist (directory directories)
       (push (make-instance 'directory :depot depot :pathname directory) entries))
@@ -89,14 +94,14 @@
 (defmethod query-entries ((depot directory) &key name type version id)
   (let ((pathname (to-pathname depot)))
     (cond ((or version type id) ;; Can't do more with ID here since we don't know how the implementation separates name from type in a pathname. Sucks.
-           (loop for file in (directory (make-pathname :name (or name "*") :type (or type "*") :version (or version #-(or allegro abcl xcl) "*") :defaults pathname))
+           (loop for file in (cl:directory (make-pathname :name (or name "*") :type (or type "*") :version (or version #-(or allegro abcl xcl) :wild) :defaults pathname))
                  when (or (null id) (string= (file-namestring file) id))
                  collect (make-instance 'file :depot depot :pathname file)))
           (name
            (let ((entries ()))
-             (dolist (directory (directory (merge-pathnames (make-pathname :directory `(:relative ,name)) pathname)))
+             (dolist (directory (cl:directory (merge-pathnames (make-pathname :directory `(:relative ,name)) pathname)))
                (push (make-instance 'directory :depot depot :pathname directory) entries))
-             (dolist (file (directory (make-pathname :name name :type "*" :version (or #-(or allegro abcl xcl) "*") :defaults pathname)) entries)
+             (dolist (file (cl:directory (make-pathname :name name :type "*" :version (or #-(or allegro abcl xcl) :wild) :defaults pathname)) entries)
                (push (make-instance 'file :depot depot :pathname file) entries))))
           (T (list-entries depot)))))
 
@@ -146,25 +151,56 @@
 (defclass file-write-transaction (stream-transaction)
   ())
 
-(defmethod open-entry ((file file) (direction :output) element-type &key (external-format :default))
+(defmethod open-entry ((file file) (direction (eql :output)) element-type &key (external-format :default))
   (let* ((pathname (to-pathname file))
          (tmp (make-pathname :type "tmp" :name (format NIL "~a-tmp~d~d" (pathname-name pathname) (get-universal-time) (random 100)))))
     (make-instance 'file-write-transaction :stream (open tmp :direction direction :element-type element-type :external-format external-format) :entry file)))
 
-(defmethod write-to ((transaction file-transaction) sequence &key start end)
+(defmethod write-to ((transaction file-write-transaction) sequence &key start end)
   (write-sequence sequence (stream transaction) :start (or start 0) :end end))
 
 (defmethod commit ((transaction file-write-transaction))
-  (rename-file (stream transaction) (to-pathname (entry transaction))))
+  (rename-file (stream transaction) (to-pathname (target transaction))))
 
-(defmethod abort ((transaction file-transaction))
+(defmethod abort ((transaction file-write-transaction))
   (delete-file (stream file)))
 
 (defclass file-read-transaction (stream-transaction)
   ())
 
-(defmethod open-entry ((file file) (direction :input) element-type &key (external-format :default))
+(defmethod open-entry ((file file) (direction (eql :input)) element-type &key (external-format :default))
   (make-instance 'file-read-transaction :stream (open (to-pathname file) :direction direction :element-type element-type :external-format external-format) :entry file))
 
 (defmethod read-from ((transaction file-read-transaction) sequence &key start end)
   (read-sequence sequence (stream transaction) :start (or start 0) :end end))
+
+(unless (boundp '*os-depot*)
+  (setf *os-depot* (make-instance 'os-depot)))
+
+(let ((host (make-instance 'host)))
+  (defmethod list-entries ((depot os-depot))
+    (list host))
+
+  (defmethod query-entries ((depot os-depot) &key ((:host _)))
+    (list host))
+
+  (defmethod id ((depot host))
+    (pathname-host *default-pathname-defaults*))  
+
+  (defmethod depot ((depot host))
+    *os-depot*)
+
+  (defmethod list-entries ((depot host))
+    (loop for device in #-windows '(NIL) #+windows '("C")
+          collect (make-instance 'device :depot depot :pathname (make-pathname :device device :directory '(:absolute)))))
+
+  (defmethod query-entry ((depot host) &key device)
+    (make-instance 'device :depot depot :pathname (make-pathname :device device :directory '(:absolute))))
+
+  (defclass device (directory) ())
+
+  (defmethod id ((depot device))
+    (pathname-device (to-pathname depot)))
+
+  (defmethod depot ((depot device))
+    host))
