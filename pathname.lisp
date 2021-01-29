@@ -48,19 +48,24 @@
     (make-pathname :host host :device device :directory (list :absolute dirs)
                    :name name :type type :version (attribute :version entry))))
 
-(defun from-pathname (pathname)
+(defun from-pathname (pathname &key create-directories)
   (let ((depot *os-depot*)
         (pathname (merge-pathnames pathname *default-pathname-defaults*)))
     (setf depot (query-entry depot :host (pathname-host pathname)))
     (when (path-component-specific-p (pathname-device pathname))
       (setf depot (query-entry depot :device (pathname-device pathname))))
     (loop for dir in (rest (pathname-directory pathname))
-          do (setf depot (entry dir depot)))
+          do (setf depot (or (query-entry depot :id dir)
+                             (if create-directories
+                                 (make-entry depot :name dir)
+                                 (error 'no-such-entry :depot depot :id dir)))))
     (if (or (pathname-name pathname)
             (pathname-type pathname))
-        (query-entry depot :name (pathname-name pathname)
-                           :type (pathname-type pathname)
-                           :version (pathname-version pathname))
+        (or (query-entry depot :name (pathname-name pathname)
+                               :type (pathname-type pathname)
+                               :version (pathname-version pathname))
+            (make-entry depot :name (pathname-name pathname)
+                              :type (pathname-type pathname)))
         depot)))
 
 (defclass directory (depot entry)
@@ -165,7 +170,7 @@
 
 (defmethod open-entry ((file file) (direction (eql :output)) element-type &key (external-format :default))
   (let* ((pathname (to-pathname file))
-         (tmp (make-pathname :type "tmp" :name (format NIL "~a-tmp~d~d" (pathname-name pathname) (get-universal-time) (random 100)))))
+         (tmp (make-pathname :name (format NIL "~a-tmp~d~d" (pathname-name pathname) (get-universal-time) (random 100)))))
     (make-instance 'file-write-transaction :stream (open tmp :direction direction :element-type element-type :external-format external-format) :entry file)))
 
 (defmethod write-to ((transaction file-write-transaction) sequence &key start end)

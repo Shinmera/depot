@@ -156,11 +156,13 @@
 
 (defmethod write-to ((entry entry) (vector vector) &key start end)
   (with-open (tx entry :output (array-element-type vector))
-    (write-to tx vector :start start :end end)))
+    (write-to tx vector :start start :end end)
+    entry))
 
 (defmethod read-from ((entry entry) (vector vector) &key start end)
   (with-open (tx entry :input (array-element-type vector))
-    (read-from tx vector :start start :end end)))
+    (read-from tx vector :start start :end end)
+    entry))
 
 (defmethod read-from ((entry entry) (target (eql 'byte)) &key start end)
   (declare (ignore start end))
