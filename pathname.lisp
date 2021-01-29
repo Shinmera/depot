@@ -66,6 +66,10 @@
 (defclass directory (depot entry)
   ((pathname :initarg :pathname :reader to-pathname)))
 
+(defmethod print-object ((directory directory) stream)
+  (print-unreadable-object (directory stream :type T)
+    (format stream "~a" (to-pathname directory))))
+
 (defmethod id ((entry directory))
   (car (last (pathname-directory (to-pathname entry)))))
 
@@ -94,14 +98,18 @@
 (defmethod query-entries ((depot directory) &key name type version id)
   (let ((pathname (to-pathname depot)))
     (cond ((or version type id) ;; Can't do more with ID here since we don't know how the implementation separates name from type in a pathname. Sucks.
-           (loop for file in (cl:directory (make-pathname :name (or name "*") :type (or type "*") :version (or version #-(or allegro abcl xcl) :wild) :defaults pathname))
-                 when (or (null id) (string= (file-namestring file) id))
-                 collect (make-instance 'file :depot depot :pathname file)))
+           (let ((entries ()))
+             (dolist (file (cl:directory (make-pathname :name (or name "*") :type type :version (or version #-(or allegro abcl xcl) :wild) :defaults pathname)))
+               (when (or (null id) (string= (file-namestring file) id))
+                 (push (make-instance 'file :depot depot :pathname file) entries)))
+             (dolist (file (cl:directory (merge-pathnames (make-pathname :directory `(:relative :wild)) pathname)) entries)
+               (when (string= (car (last (pathname-directory file))) id)
+                 (push (make-instance 'directory :depot depot :pathname file) entries)))))
           (name
            (let ((entries ()))
              (dolist (directory (cl:directory (merge-pathnames (make-pathname :directory `(:relative ,name)) pathname)))
                (push (make-instance 'directory :depot depot :pathname directory) entries))
-             (dolist (file (cl:directory (make-pathname :name name :type "*" :version (or #-(or allegro abcl xcl) :wild) :defaults pathname)) entries)
+             (dolist (file (cl:directory (make-pathname :name name :version (or #-(or allegro abcl xcl) :wild) :defaults pathname)) entries)
                (push (make-instance 'file :depot depot :pathname file) entries))))
           (T (list-entries depot)))))
 
@@ -113,6 +121,10 @@
 
 (defclass file (entry)
   ((pathname :initarg :pathname :reader to-pathname)))
+
+(defmethod print-object ((file file) stream)
+  (print-unreadable-object (file stream :type T)
+    (format stream "~a" (to-pathname file))))
 
 (defmethod id ((entry file))
   (file-namestring (to-pathname entry)))
@@ -173,6 +185,9 @@
 
 (defmethod read-from ((transaction file-read-transaction) sequence &key start end)
   (read-sequence sequence (stream transaction) :start (or start 0) :end end))
+
+(defmethod commit ((transaction file-read-transaction)))
+(defmethod abort ((transaction file-read-transaction)))
 
 (unless (boundp '*os-depot*)
   (setf *os-depot* (make-instance 'os-depot)))
