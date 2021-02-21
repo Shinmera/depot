@@ -6,5 +6,58 @@
 
 (defpackage #:org.shirakumo.depot
   (:use #:cl)
-  (:shadow #:abort #:directory #:stream)
-  (:export))
+  (:shadow #:abort #:directory)
+  ;; protocol.lisp
+  (:export
+   #:depot-condition
+   #:no-such-entry
+   #:permission-denied
+   #:depot-full
+   #:unsupported-operation
+   #:transaction-aborted
+   #:write-conflict
+   #:read-invalidated
+   #:realizer
+   #:depot
+   #:entry
+   #:depot
+   #:transaction
+   #:entry
+   #:list-entries
+   #:query-entries
+   #:query-entr
+   #:entry
+   #:entry-exists-p
+   #:make-entry
+   #:delete-entry
+   #:entry-matches-p
+   #:attributes
+   #:attribute
+   #:id
+   #:depot
+   #:realize-entry
+   #:open-entry
+   #:write-to
+   #:read-from
+   #:size
+   #:to-stream
+   #:commit
+   #:abort
+   #:register-realizer
+   #:remove-realizer
+   #:define-realizer
+   #:entry*
+   #:with-open)
+  ;; pathname.lisp
+  (:export
+   #:*os-depot*
+   #:os-depot
+   #:host
+   #:device
+   #:to-pathname
+   #:from-pathname
+   #:directory
+   #:file
+   #:stream-transaction
+   #:file-write-transaction
+   #:file-read-transaction))
