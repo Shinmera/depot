@@ -144,6 +144,12 @@
           :write-date (file-write-date pathname)
           :author (file-author pathname))))
 
+(defmethod attribute ((name (eql :name)) (entry file))
+  (normalize-path-component (pathname-name pathname)))
+
+(defmethod attribute ((name (eql :type)) (entry file))
+  (normalize-path-component (pathname-type pathname)))
+
 (defmethod attribute ((name (eql :write-date)) (entry file))
   (file-write-date (to-pathname entry)))
 
