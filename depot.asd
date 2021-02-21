@@ -14,10 +14,9 @@
   :bug-tracker "https://github.com/Shinmera/depot/issues"
   :source-control (:git "https://github.com/Shinmera/depot.git")
   :serial T
-  :defsystem-depends-on (:trivial-features)
   :components ((:file "package")
                (:file "protocol")
                (:file "pathname")
                (:file "documentation"))
   :depends-on (:documentation-utils
-               :cffi))
+               :trivial-gray-streams))

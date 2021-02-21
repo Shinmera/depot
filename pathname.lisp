@@ -154,16 +154,16 @@
   (delete-file (to-pathname entry)))
 
 (defclass stream-transaction (transaction)
-  ((stream :initarg :stream :reader stream)))
+  ((stream :initarg :stream :reader to-stream)))
 
 (defmethod size ((transaction stream-transaction))
-  (file-length (stream transaction)))
+  (file-length (to-stream transaction)))
 
 (defmethod abort :after ((transaction stream-transaction))
-  (close (stream transaction)))
+  (close (to-stream transaction)))
 
 (defmethod commit :after ((transaction stream-transaction))
-  (close (stream transaction)))
+  (close (to-stream transaction)))
 
 (defclass file-write-transaction (stream-transaction)
   ())
@@ -174,13 +174,13 @@
     (make-instance 'file-write-transaction :stream (open tmp :direction direction :element-type element-type :external-format external-format) :entry file)))
 
 (defmethod write-to ((transaction file-write-transaction) sequence &key start end)
-  (write-sequence sequence (stream transaction) :start (or start 0) :end end))
+  (write-sequence sequence (to-stream transaction) :start (or start 0) :end end))
 
 (defmethod commit ((transaction file-write-transaction))
-  (rename-file (stream transaction) (to-pathname (target transaction))))
+  (rename-file (to-stream transaction) (to-pathname (target transaction))))
 
 (defmethod abort ((transaction file-write-transaction))
-  (delete-file (stream file)))
+  (delete-file (to-stream file)))
 
 (defclass file-read-transaction (stream-transaction)
   ())
@@ -189,7 +189,7 @@
   (make-instance 'file-read-transaction :stream (open (to-pathname file) :direction direction :element-type element-type :external-format external-format) :entry file))
 
 (defmethod read-from ((transaction file-read-transaction) sequence &key start end)
-  (read-sequence sequence (stream transaction) :start (or start 0) :end end))
+  (read-sequence sequence (to-stream transaction) :start (or start 0) :end end))
 
 (defmethod commit ((transaction file-read-transaction)))
 (defmethod abort ((transaction file-read-transaction)))
