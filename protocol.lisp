@@ -43,6 +43,8 @@
 (defgeneric write-to (transaction sequence &key start end))
 (defgeneric read-from (transaction sequence &key start end))
 (defgeneric size (transaction))
+(defgeneric index (transaction))
+(defgeneric (setf index) (index transaction))
 (defgeneric to-stream (transaction))
 (defgeneric commit (transaction))
 (defgeneric abort (transaction))
@@ -304,7 +306,7 @@
   (write-to (transaction stream) seq :start start :end end))
 
 (defmethod trivial-gray-streams:stream-file-position ((stream transaction-stream))
-  )
+  (index (transaction stream)))
 
 (defmethod (setf trivial-gray-streams:stream-file-position) (pos (stream transaction-stream))
-  )
+  (setf (index (transaction stream)) pos))

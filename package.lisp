@@ -40,6 +40,7 @@
    #:write-to
    #:read-from
    #:size
+   #:index
    #:to-stream
    #:commit
    #:abort
