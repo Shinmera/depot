@@ -58,7 +58,7 @@
           do (setf depot (or (query-entry depot :id dir)
                              (if create-directories
                                  (make-entry depot :name dir)
-                                 (error 'no-such-entry :depot depot :id dir)))))
+                                 (error 'no-such-entry :object depot :id dir)))))
     (if (or (pathname-name pathname)
             (pathname-type pathname))
         (or (query-entry depot :name (pathname-name pathname)

@@ -15,6 +15,7 @@
   :source-control (:git "https://github.com/Shinmera/depot.git")
   :serial T
   :components ((:file "package")
+               (:file "conditions")
                (:file "protocol")
                (:file "pathname")
                (:file "documentation"))

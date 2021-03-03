@@ -7,16 +7,22 @@
 (defpackage #:org.shirakumo.depot
   (:use #:cl)
   (:shadow #:abort #:directory)
-  ;; protocol.lisp
+  ;; conditions.lisp
   (:export
    #:depot-condition
+   #:object
    #:no-such-entry
+   #:id
    #:permission-denied
    #:depot-full
    #:unsupported-operation
+   #:operation
    #:transaction-aborted
    #:write-conflict
    #:read-invalidated
+   #:not-a-depot)
+  ;; protocol.lisp
+  (:export
    #:realizer
    #:depot
    #:entry

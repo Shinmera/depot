@@ -8,15 +8,6 @@
 
 (defvar *entry-realizers* (make-hash-table :test 'eql))
 
-(define-condition depot-condition (condition) ())
-(define-condition no-such-entry (depot-condition error) ())
-(define-condition permission-denied (depot-condition error) ())
-(define-condition depot-full (depot-condition error) ())
-(define-condition unsupported-operation (depot-condition error) ())
-(define-condition transaction-aborted (depot-condition error) ())
-(define-condition write-conflict (transaction-aborted) ())
-(define-condition read-invalidated (transaction-aborted) ())
-
 (defclass realizer () ())
 (defclass depot () ())
 (defclass entry ()
@@ -140,7 +131,7 @@
 
 (defmethod entry (id (depot depot))
   (or (query-entry depot :id id)
-      (error 'no-such-entry :depot depot :id id)))
+      (error 'no-such-entry :object depot :id id)))
 
 (defmethod entry-exists-p (id (depot depot))
   (not (null (query-entry depot :id id))))
