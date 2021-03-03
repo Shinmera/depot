@@ -39,6 +39,7 @@
 (defgeneric id (entry))
 (defgeneric depot (entry))
 (defgeneric realize-entry (entry realizer))
+(defgeneric ensure-depot (thing))
 (defgeneric open-entry (entry direction element-type &key))
 (defgeneric write-to (transaction sequence &key start end))
 (defgeneric read-from (transaction sequence &key start end))
@@ -94,6 +95,13 @@
          :report "Abort the entry open."
          (declare (ignore e))
          (when ,transaction (abort ,transaction))))))
+
+(defmethod ensure-depot ((depot depot))
+  depot)
+
+(defmethod ensure-depot ((entry entry))
+  (or (realize-entry entry T)
+      (error 'not-a-depot :object entry)))
 
 ;;;; Defaulting methods
 ;;; Thanks to these only the following functions need to be implemented to complete the interfaces:

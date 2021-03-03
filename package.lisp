@@ -49,6 +49,7 @@
    #:define-realizer
    #:entry*
    #:with-open
+   #:ensure-depot
    #:transaction-stream)
   ;; pathname.lisp
   (:export
