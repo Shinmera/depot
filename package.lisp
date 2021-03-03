@@ -48,7 +48,8 @@
    #:remove-realizer
    #:define-realizer
    #:entry*
-   #:with-open)
+   #:with-open
+   #:transaction-stream)
   ;; pathname.lisp
   (:export
    #:*os-depot*
