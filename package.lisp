@@ -28,10 +28,11 @@
    #:entry
    #:depot
    #:transaction
+   #:target
    #:entry
    #:list-entries
    #:query-entries
-   #:query-entr
+   #:query-entry
    #:entry
    #:entry-exists-p
    #:make-entry
