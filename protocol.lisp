@@ -57,14 +57,16 @@
 
 (defmacro define-realizer (name &body dispatchers)
   (let ((nameg (gensym "NAME")))
-    `(progn (defclass ',name (realizer) ())
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (unless (find-class ',name NIL)
+         (defclass ,name (realizer) ()))
 
-            ,@(loop for ((var class) . body) in dispatchers
-                    collect `(defmethod realize-entry ((,var ,class) (,nameg ,name))
-                               (declare (ignore ,nameg))
-                               ,@body))
-            
-            (register-realizer ',name))))
+       ,@(loop for ((var class) . body) in dispatchers
+               collect `(defmethod realize-entry ((,var ,class) (,nameg ,name))
+                          (declare (ignore ,nameg))
+                          ,@body))
+       
+       (register-realizer ',name))))
 
 (defmethod realize-entry ((entry entry) (all (eql T)))
   (loop for realizer being the hash-keys of *entry-realizers*
