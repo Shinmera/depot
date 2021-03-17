@@ -91,7 +91,7 @@
 (defmethod list-entries ((depot directory))
   (let* ((pathname (to-pathname depot))
          (directories (cl:directory (merge-pathnames (make-pathname :directory `(:relative :wild) :name NIL :type NIL :version NIL) pathname)))
-         (files (cl:directory (make-pathname :name "*" :type "*" :version (or #-(or allegro abcl xcl) :newest) :defaults pathname)))
+         (files (cl:directory (make-pathname :name :wild :type :wild :version (or #-(or allegro abcl xcl) :newest) :defaults pathname)))
          (entries ()))
     (dolist (directory directories)
       (push (make-instance 'directory :depot depot :pathname directory) entries))
@@ -104,7 +104,7 @@
   (let ((pathname (to-pathname depot)))
     (cond ((or version type id) ;; Can't do more with ID here since we don't know how the implementation separates name from type in a pathname. Sucks.
            (let ((entries ()))
-             (dolist (file (cl:directory (make-pathname :name (or name "*") :type type :version (or version #-(or allegro abcl xcl) :wild) :defaults pathname)))
+             (dolist (file (cl:directory (make-pathname :name (or name :wild) :type (or type :wild) :version (or version #-(or allegro abcl xcl) :wild) :defaults pathname)))
                (when (or (null id) (string= (file-namestring file) id))
                  (push (make-instance 'file :depot depot :pathname file) entries)))
              (dolist (file (cl:directory (merge-pathnames (make-pathname :directory `(:relative :wild)) pathname)) entries)
