@@ -138,7 +138,7 @@
 (defmethod entry-exists-p (id (depot depot))
   (not (null (query-entry depot :id id))))
 
-(defmethod query-entries ((depot depot) &rest args)
+(defmethod query-entries ((depot depot) &rest args &key &allow-other-keys)
   (flet ((matches-query (entry)
            (loop for (attribute val) on args by #'cddr
                  always (entry-matches-p entry attribute val))))
