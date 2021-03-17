@@ -293,7 +293,7 @@
     (setf (aref buf 0) byte)
     (write-to (transaction stream) buf)))
 
-(defmethod trivial-gray-streams:stream-read-sequence ((stream transaction-stream) seq start end)
+(defmethod trivial-gray-streams:stream-read-sequence ((stream transaction-stream) seq start end &key)
   (when (< start end)
     (when (unread stream)
       (setf (aref seq start) (unread stream))
@@ -301,7 +301,7 @@
       (incf start))
     (read-from (transaction stream) seq :start start :end end)))
 
-(defmethod trivial-gray-streams:stream-write-sequence ((stream transaction-stream) seq start end)
+(defmethod trivial-gray-streams:stream-write-sequence ((stream transaction-stream) seq start end &key)
   (write-to (transaction stream) seq :start start :end end))
 
 (defmethod trivial-gray-streams:stream-file-position ((stream transaction-stream))

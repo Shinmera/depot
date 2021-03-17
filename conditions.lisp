@@ -9,7 +9,7 @@
 (defun arg! (initarg)
   (error "Argument ~s was required but not passed." initarg))
 
-(defmacro define-condition* (name classes slots report report-args)
+(defmacro define-condition* (name classes slots report &rest report-args)
   `(define-condition ,name ,classes
      ,slots
      (:report (lambda (c s) (format s ,report ,@(loop for arg in report-args collect `(,arg c)))))))
