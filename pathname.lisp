@@ -69,7 +69,8 @@
         depot)))
 
 (defclass directory (depot entry)
-  ((pathname :initarg :pathname :reader to-pathname)))
+  ((depot :initarg :depot :reader depot)
+   (pathname :initarg :pathname :reader to-pathname)))
 
 (defmethod print-object ((directory directory) stream)
   (print-unreadable-object (directory stream :type T)
@@ -125,7 +126,8 @@
       (make-instance 'file :depot depot :pathname (make-pathname :name name :type type :defaults (to-pathname depot)))))
 
 (defclass file (entry)
-  ((pathname :initarg :pathname :reader to-pathname)))
+  ((depot :initarg :depot :reader depot)
+   (pathname :initarg :pathname :reader to-pathname)))
 
 (defmethod print-object ((file file) stream)
   (print-unreadable-object (file stream :type T)
@@ -165,10 +167,10 @@
 (defmethod size ((transaction stream-transaction))
   (file-length (to-stream transaction)))
 
-(defmethod abort :after ((transaction stream-transaction))
+(defmethod abort :after ((transaction stream-transaction) &key)
   (close (to-stream transaction)))
 
-(defmethod commit :after ((transaction stream-transaction))
+(defmethod commit :after ((transaction stream-transaction) &key)
   (close (to-stream transaction)))
 
 (defclass file-write-transaction (stream-transaction)
@@ -182,10 +184,10 @@
 (defmethod write-to ((transaction file-write-transaction) sequence &key start end)
   (write-sequence sequence (to-stream transaction) :start (or start 0) :end end))
 
-(defmethod commit ((transaction file-write-transaction))
+(defmethod commit ((transaction file-write-transaction) &key)
   (rename-file (to-stream transaction) (to-pathname (target transaction))))
 
-(defmethod abort ((transaction file-write-transaction))
+(defmethod abort ((transaction file-write-transaction) &key)
   (delete-file (to-stream file)))
 
 (defclass file-read-transaction (stream-transaction)
@@ -197,8 +199,8 @@
 (defmethod read-from ((transaction file-read-transaction) sequence &key start end)
   (read-sequence sequence (to-stream transaction) :start (or start 0) :end end))
 
-(defmethod commit ((transaction file-read-transaction)))
-(defmethod abort ((transaction file-read-transaction)))
+(defmethod commit ((transaction file-read-transaction)) &key)
+(defmethod abort ((transaction file-read-transaction)) &key)
 
 (unless (boundp '*os-depot*)
   (setf *os-depot* (make-instance 'os-depot)))

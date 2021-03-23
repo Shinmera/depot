@@ -10,8 +10,7 @@
 
 (defclass realizer () ())
 (defclass depot () ())
-(defclass entry ()
-  ((depot :initarg :depot :reader depot)))
+(defclass entry () ())
 (defclass transaction ()
   ((entry :initarg :entry :reader target)))
 
@@ -38,8 +37,8 @@
 (defgeneric index (transaction))
 (defgeneric (setf index) (index transaction))
 (defgeneric to-stream (transaction))
-(defgeneric commit (transaction))
-(defgeneric abort (transaction))
+(defgeneric commit (transaction &key))
+(defgeneric abort (transaction &key))
 
 (flet ((ensure-realizer (realizer)
          (etypecase realizer
