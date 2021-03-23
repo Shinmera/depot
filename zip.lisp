@@ -32,8 +32,8 @@
                                                      :depot (depot:depot file))))
        (loop for entry across (zippy:entries file)
              do (if (find :directory (zippy:attributes entry))
-                    (change-class entry 'zip-directory :depot file)
-                    (change-class entry 'zip-file :depot file)))
+                    (change-class entry 'zip-directory)
+                    (change-class entry 'zip-file)))
        file))))
 
 (defmethod depot:list-entries ((depot zip-archive))
@@ -45,14 +45,26 @@
           when (string= (zippy:file-name entry) name)
           collect entry)))
 
-(defmethod depot:make-entry ((depot zip-archive) &key)
-  )
+(defmethod depot:make-entry ((depot zip-archive) &key name type id encryption-method compression-method (last-modified (get-universal-time)) comment)
+  (vector-push-extend (make-instance 'zip-file :zip-file depot
+                                               :encryption-method encryption-method
+                                               :compression-method compression-method
+                                               :last-modified last-modified
+                                               :comment comment
+                                               :file-name (or id (format NIL "~a~@[.~a~]" name type)))
+                      (zippy:entries depot)))
+
+(defmethod depot:commit ((depot zip-archive) &key password)
+  (zippy:compress-zip depot (depot:to-pathname depot) :password password :if-exists :supersede))
 
 (defclass zip-entry (zippy:zip-entry)
   ())
 
 (defmethod close ((entry zip-entry) &rest args)
   (apply #'close (depot:depot entry) args))
+
+(defmethod depot:depot ((entry zip-entry))
+  (zippy:zip-file entry))
 
 (defmethod depot:attributes ((entry zip-entry))
   (destructuring-bind (file-attrs encoding system-attributes) (zippy:attributes entry)
@@ -85,8 +97,9 @@
         when (starts-with prefix (zippy:file-name entry))
         collect entry))
 
-(defmethod depot:make-entry ((depot zip-directory) &key)
-  )
+(defmethod depot:make-entry ((depot zip-directory) &rest args)
+  (let ((name (or (getf args :id) (format NIL "~a~@[.~a~]" (getf args :name) (getf args :type)))))
+    (apply #'depot:make-entry (depot:depot depot) :id (format NIL "~a/~a" (zippy:file-name depot) name) args)))
 
 (defclass zip-file (zip-entry depot:entry)
   ())
@@ -94,9 +107,63 @@
 (defmethod depot:open-entry ((entry zip-entry) (direction (eql :output)) element-type &key (encryption-method (zippy:encryption-method entry))
                                                                                            (compression-method (zippy:compression-method entry))
                                                                                            password)
-  )
+  (unless (subtypep element-type '(unsigned-byte 8))
+    (error "Only (unsigned-byte 8) is supported as element-type."))
+  (make-instance 'write-transaction
+                 :entry entry
+                 :encryption-method encryption-method
+                 :compression-method compression-method
+                 :password password))
+
+(defclass write-transaction (depot:transaction)
+  ((index :initform 0 :accessor index)
+   (buffers :initform (list (make-array 4096 :element-type '(unsigned-byte 8))) :accessor buffers)
+   (encryption-method :initarg :encryption-method :accessor encryption-method)
+   (compression-method :initarg :compression-method :accessor compression-method)
+   (password :initarg :password :accessor password)))
+
+(defmethod depot:write-to ((transaction write-transaction) sequence &key start end)
+  (let ((buffer (first (buffers transaction)))
+        (index (index transaction))
+        (start (or start 0))
+        (end (or end (length sequence))))
+    (loop
+       (let* ((avail (- (length buffer) index))
+              (to-copy (max 0 (min avail (- start end)))))
+         (replace buffer sequence :start1 index :start2 start :end2 end)
+         (incf index to-copy)
+         (incf start to-copy)
+         (when (<= (length buffer) index)
+           (setf buffer (make-array 4096 :element-type '(unsigned-byte 8)))
+           (push buffer (buffers transaction))
+           (setf index 0))
+         (when (<= end start)
+           (return))))
+    (setf (index transaction) index)))
+
+(defmethod depot:commit ((transaction write-transaction) &key flush password)
+  (destructuring-bind (partial . buffers) (buffers transaction)
+    (let* ((total-size (+ (index transaction)
+                          (loop for buffer in buffers sum (length buffer))))
+           (complete (make-array total-size :element-type '(unsigned-byte 8)))
+           (index (- total-size (index transaction)))
+           (entry (depot:target transaction)))
+      (replace complete partial :start1 index)
+      (dolist (buffer buffers)
+        (decf index (length buffer))
+        (replace complete buffer :start1 index))
+      (setf (zippy:content entry) complete)
+      (setf (zippy:encryption-method entry) (encryption-method transaction))
+      (setf (zippy:compression-method entry) (compression-method transaction))
+      (when flush
+        (depot:commit (depot:depot entry) :password password)))))
+
+(defmethod depot:abort ((transaction write-transaction) &key)
+  (setf (buffers transaction) ()))
 
 (defmethod depot:open-entry ((entry zip-entry) (direction (eql :input)) element-type &key password)
+  (unless (subtypep element-type '(unsigned-byte 8))
+    (error "Only (unsigned-byte 8) is supported as element-type."))
   (let* ((disks (zippy:disks (zippy:zip-file entry)))
          (disk (zippy:disk entry))
          (input (or (aref disks disk)
@@ -126,8 +193,8 @@
 (defmethod (setf depot:index) :after (index (transaction read-transaction))
   (zippy:seek (input transaction) (+ (zippy:offset (depot:target transaction)) index)))
 
-(defmethod depot:commit ((transaction read-transaction)))
-(defmethod depot:abort ((transaction read-transaction)))
+(defmethod depot:commit ((transaction read-transaction)) &key)
+(defmethod depot:abort ((transaction read-transaction)) &key)
 
 (defmethod depot:read-from ((transaction read-transaction) sequence &key start end)
   (let ((decompression-state (decompression-state transaction))
