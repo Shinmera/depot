@@ -199,8 +199,8 @@
 (defmethod read-from ((transaction file-read-transaction) sequence &key start end)
   (read-sequence sequence (to-stream transaction) :start (or start 0) :end end))
 
-(defmethod commit ((transaction file-read-transaction)) &key)
-(defmethod abort ((transaction file-read-transaction)) &key)
+(defmethod commit ((transaction file-read-transaction) &key))
+(defmethod abort ((transaction file-read-transaction) &key))
 
 (unless (boundp '*os-depot*)
   (setf *os-depot* (make-instance 'os-depot)))

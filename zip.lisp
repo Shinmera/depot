@@ -21,20 +21,8 @@
   (and (<= (length prefix) (length string))
        (string= prefix string :end2 (length prefix))))
 
-(defclass zip-archive (depot:depot depot:file zippy:zip-file)
-  ((streams :initarg :streams :initform () :reader streams)))
-
-(depot:define-realizer zip
-  ((file depot:file)
-   (multiple-value-bind (zip-file streams) (zippy:open-zip-file (depot:to-pathname file))
-     (let ((file (change-class zip-file 'zip-archive :streams streams
-                                                     :pathname (depot:to-pathname file)
-                                                     :depot (depot:depot file))))
-       (loop for entry across (zippy:entries file)
-             do (if (find :directory (zippy:attributes entry))
-                    (change-class entry 'zip-directory)
-                    (change-class entry 'zip-file)))
-       file))))
+(defclass zip-archive (depot:depot zippy:zip-file)
+  ((depot:depot :initarg :depot :reader depot:depot)))
 
 (defmethod depot:list-entries ((depot zip-archive))
   (coerce (zippy:entries depot) 'list))
@@ -54,8 +42,30 @@
                                                :file-name (or id (format NIL "~a~@[.~a~]" name type)))
                       (zippy:entries depot)))
 
-(defmethod depot:commit ((depot zip-archive) &key password)
+(defclass zip-file-archive (zip-archive depot:file)
+  ((streams :initarg :streams :initform () :reader streams)))
+
+(defmethod depot:commit ((depot zip-file-archive) &key password)
   (zippy:compress-zip depot (depot:to-pathname depot) :password password :if-exists :supersede))
+
+(flet ((convert-entries (file)
+         (loop for entry across (zippy:entries file)
+               do (if (find :directory (zippy:attributes entry))
+                      (change-class entry 'zip-directory)
+                      (change-class entry 'zip-file)))
+         file))
+  (depot:define-realizer zip
+    ((file depot:file)
+     (multiple-value-bind (zip-file streams) (zippy:open-zip-file (depot:to-pathname file))
+       (convert-entries (change-class zip-file 'zip-file-archive
+                                      :streams streams
+                                      :pathname (depot:to-pathname file)
+                                      :depot (depot:depot file)))))
+    ((entry depot:entry)
+     ;; KLUDGE: we can't use the streams interface because zippy requires file-streams (and file-length)
+     ;;         which gray streams cannot emulate. :(
+     (convert-entries (change-class (zippy:open-zip-file (depot:read-from entry 'byte)) 'zip-archive
+                                    :depot (depot:depot entry))))))
 
 (defclass zip-entry (zippy:zip-entry)
   ())
@@ -193,8 +203,8 @@
 (defmethod (setf depot:index) :after (index (transaction read-transaction))
   (zippy:seek (input transaction) (+ (zippy:offset (depot:target transaction)) index)))
 
-(defmethod depot:commit ((transaction read-transaction)) &key)
-(defmethod depot:abort ((transaction read-transaction)) &key)
+(defmethod depot:commit ((transaction read-transaction) &key))
+(defmethod depot:abort ((transaction read-transaction) &key))
 
 (defmethod depot:read-from ((transaction read-transaction) sequence &key start end)
   (let ((decompression-state (decompression-state transaction))
