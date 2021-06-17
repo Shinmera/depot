@@ -4,21 +4,18 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(asdf:defsystem depot
+(asdf:defsystem depot-test
   :version "1.0.0"
   :license "zlib"
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
-  :description "Protocol for transparent collections of files."
+  :description "Testing system for depot."
   :homepage "https://shinmera.github.io/depot"
   :bug-tracker "https://github.com/Shinmera/depot/issues"
   :source-control (:git "https://github.com/Shinmera/depot.git")
   :serial T
-  :components ((:file "package")
-               (:file "conditions")
-               (:file "protocol")
-               (:file "pathname")
-               (:file "documentation"))
-  :depends-on (:documentation-utils
-               :trivial-gray-streams)
-  :in-order-to ((asdf:test-op (asdf:test-op :depot-test))))
+  :components ((:file "test"))
+  :depends-on (:parachute
+               :depot
+               :depot-zip)
+  :perform (asdf:test-op (op c) (uiop:symbol-call :parachute :test :org.shirakumo.depot.test)))
