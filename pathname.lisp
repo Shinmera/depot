@@ -161,18 +161,6 @@
 (defmethod delete-entry ((entry file))
   (delete-file (to-pathname entry)))
 
-(defclass stream-transaction (transaction)
-  ((stream :initarg :stream :reader to-stream)))
-
-(defmethod size ((transaction stream-transaction))
-  (file-length (to-stream transaction)))
-
-(defmethod abort :after ((transaction stream-transaction) &key)
-  (close (to-stream transaction)))
-
-(defmethod commit :after ((transaction stream-transaction) &key)
-  (close (to-stream transaction)))
-
 (defclass file-write-transaction (stream-transaction)
   ())
 
@@ -181,26 +169,19 @@
          (tmp (make-pathname :name (format NIL "~a-tmp~d~d" (pathname-name pathname) (get-universal-time) (random 100)))))
     (make-instance 'file-write-transaction :stream (open tmp :direction direction :element-type element-type :external-format external-format) :entry file)))
 
-(defmethod write-to ((transaction file-write-transaction) sequence &key start end)
-  (write-sequence sequence (to-stream transaction) :start (or start 0) :end end))
-
 (defmethod commit ((transaction file-write-transaction) &key)
-  (rename-file (to-stream transaction) (to-pathname (target transaction))))
+  (rename-file (to-stream transaction) (to-pathname (target transaction)))
+  (call-next-method))
 
 (defmethod abort ((transaction file-write-transaction) &key)
-  (delete-file (to-stream file)))
+  (delete-file (to-stream file))
+  (call-next-method))
 
 (defclass file-read-transaction (stream-transaction)
   ())
 
 (defmethod open-entry ((file file) (direction (eql :input)) element-type &key (external-format :default))
   (make-instance 'file-read-transaction :stream (open (to-pathname file) :direction direction :element-type element-type :external-format external-format) :entry file))
-
-(defmethod read-from ((transaction file-read-transaction) sequence &key start end)
-  (read-sequence sequence (to-stream transaction) :start (or start 0) :end end))
-
-(defmethod commit ((transaction file-read-transaction) &key))
-(defmethod abort ((transaction file-read-transaction) &key))
 
 (unless (boundp '*os-depot*)
   (setf *os-depot* (make-instance 'os-depot)))

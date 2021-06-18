@@ -57,6 +57,7 @@
    #:entry*
    #:with-open
    #:ensure-depot
+   #:stream-transaction
    #:transaction-stream)
   ;; pathname.lisp
   (:export
@@ -68,6 +69,5 @@
    #:from-pathname
    #:directory
    #:file
-   #:stream-transaction
    #:file-write-transaction
    #:file-read-transaction))

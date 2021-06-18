@@ -189,6 +189,31 @@
             until (= 0 read)
             do (write-sequence buffer out :end read)))))
 
+(defclass stream-transaction (transaction)
+  ((stream :initarg :stream :reader to-stream)))
+
+(defmethod size ((transaction stream-transaction))
+  (file-length (to-stream transaction)))
+
+(defmethod index ((transaction stream-transaction))
+  (file-position (to-stream transaction)))
+
+(defmethod (setf index) (index (transaction stream-transaction))
+  (file-position (to-stream transaction) index)
+  index)
+
+(defmethod abort ((transaction stream-transaction) &key)
+  (close (to-stream transaction)))
+
+(defmethod commit ((transaction stream-transaction) &key)
+  (close (to-stream transaction)))
+
+(defmethod write-to ((transaction stream-transaction) sequence &key start end)
+  (write-sequence sequence (to-stream transaction) :start (or start 0) :end end))
+
+(defmethod read-from ((transaction stream-transaction) sequence &key start end)
+  (read-sequence sequence (to-stream transaction) :start (or start 0) :end end))
+
 ;;;; TODO: This interface is /slow/ because there is no internal buffering going on at all.
 ;;;;       A faster version would properly buffer and keep indices.
 (defclass transaction-stream (trivial-gray-streams:fundamental-stream)
