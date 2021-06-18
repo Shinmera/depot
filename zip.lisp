@@ -27,8 +27,8 @@
 (defmethod depot:list-entries ((depot zip-archive))
   (coerce (zippy:entries depot) 'list))
 
-(defmethod depot:query-entries ((depot zip-archive) &key name type &allow-other-keys)
-  (let ((name (format NIL "~a~@[.~a~]" name type)))
+(defmethod depot:query-entries ((depot zip-archive) &key id name type &allow-other-keys)
+  (let ((name (or id (format NIL "~a~@[.~a~]" name type))))
     (loop for entry across (zippy:entries depot)
           when (string= (zippy:file-name entry) name)
           collect entry)))
@@ -75,6 +75,9 @@
 
 (defmethod depot:depot ((entry zip-entry))
   (zippy:zip-file entry))
+
+(defmethod depot:id ((entry zip-entry))
+  (zippy:file-name entry))
 
 (defmethod depot:attributes ((entry zip-entry))
   (destructuring-bind (file-attrs encoding system-attributes) (zippy:attributes entry)
@@ -187,6 +190,10 @@
                    :input input
                    :decryption-state (apply #'zippy:make-decryption-state (first (zippy:encryption-method entry)) input password (rest (zippy:encryption-method entry)))
                    :decompression-state (zippy:make-decompression-state (zippy:compression-method entry)))))
+
+(defmethod depot:read-from ((entry zip-entry) (thing (eql 'character)) &rest args)
+  (babel:octets-to-string
+   (apply #'depot:read-from entry 'byte args)))
 
 (defclass read-transaction (depot:transaction)
   ((input :initarg :input :reader input)

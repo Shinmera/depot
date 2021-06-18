@@ -16,4 +16,5 @@
   :serial T
   :components ((:file "zip"))
   :depends-on (:zippy
-               :depot))
+               :depot
+               :babel))
