@@ -539,13 +539,82 @@ See TRANSACTION"))
 
 ;; pathname.lisp
 (docs:define-docs
-  (variable *os-depot*)
-  (type os-depot)
-  (type host)
-  (type device)
-  (function to-pathname)
-  (function from-pathname)
-  (type directory)
-  (type file)
-  (type file-write-transaction)
-  (type file-read-transaction))
+  (variable *os-depot*
+    "Contains the base depot for the operating system according to the implementation.
+
+See OS-DEPOT")
+  
+  (type os-depot
+    "Base class for the operating system's file system depot.
+
+See *OS-DEPOT*
+See DEPOT")
+
+  (type host
+    "Base class for pathname hosts.
+
+These correspond to pathname-host types.
+
+See DEPOT")
+
+  (type device
+    "Base class for pathname devices.
+
+These correspond to pathname-device types.
+
+See DEPOT")
+
+  (function to-pathname
+    "Returns a pathname that this entry represents.
+
+This operation may also be used for entries that do not come from a
+file system depot, but the success of the operation is not
+guaranteed, as it is subject to implementation pathname constraints
+that may not apply to the depot or entry in question.
+
+See FROM-PATHNAME")
+
+  (function from-pathname
+    "Returns an entry corresponding to the given pathname.
+
+This may signal an error of type NO-SUCH-ENTRY if the entry does not
+exist.
+
+If CREATE-DIRECTORIES is true, inexistent entries along the pathname's
+directories will be created.
+
+Returns a FILE or DIRECTORY.
+
+See TO-PATHNAME
+See FILE
+See DIRECTORY")
+
+  (type directory
+    "Class representing directories on a standard operating system hierarchical file system.
+
+This is both a DEPOT and an ENTRY.
+
+See DEPOT
+See ENTRY")
+
+  (type file
+    "Class representing files on a standard operating system hierarchical file system.
+
+See ENTRY")
+
+  (type file-write-transaction
+    "Class representing a write transaction to a file.
+
+The atomicity of the write is established by writing to a temporary
+file, which is then renamed to the existing file on commit.
+
+See FILE
+See OPEN-ENTRY
+See TRANSACTION")
+
+  (type file-read-transaction
+    "Class representing a read transaction from a file.
+
+See FILE
+See OPEN-ENTRY
+See TRANSACTION"))
