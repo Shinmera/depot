@@ -1,4 +1,77 @@
 ## About This
 This is a system presenting a protocol for "file systems" -- things that present a collection of "files," which are things that have several attributes, and a central data payload. Most notably this includes the OS filesystem, but can also be used to address other filesystem-like things like archives, object stores, etc. in the same manner.
 
+## How To
+For the purposes of this introduction we will assume that the package ``org.shirakumo.depot`` has the local nickname ``depot``.
 
+While depot interactions depend directly on the storage backend used, most operating systems have a hierarchical file system that we can access. We will concentrate on that backend in this tutorial.
+
+First, we can access the file system through the ``*os-depot*`` variable, which gives us a base ``depot``. We can then ask it for what entries it has:
+
+:: common lisp
+(depot:list-entries depot:*os-depot*)
+; => (#<HOST>)
+::
+
+Not much going on there, but the ``host`` is another ``depot``, so we can do the same again:
+
+:: common lisp
+(depot:list-entries (first *))
+; => (#<DEVICE />)
+::
+
+Aha! Now we get a ``device`` object, which on this system seems to represent the root directory. Let's ask it for entries once again:
+
+:: common lisp
+(depot:list-entries (first *))
+; => (#<DIRECTORY /var/> ...)
+::
+
+This should give a list of ``directory``s present on the device's root, and possibly some ``file``s as well. Before we go any further though, traversing a deeply hierarchical system like this is kind of tedious. We can instead use ``entry*`` which traverses multiple levels at once, or even better for pathnames we can use ``from-pathname``.
+
+:: common lisp
+(depot:from-pathname (user-homedir-pathname))
+; => #<DIRECTORY /home/linus/>
+::
+
+Now here we can do something a bit more interesting aside from listing its entries. We can create a new one:
+
+:: common lisp
+(depot:make-entry * :name "test")
+; => #<FILE /home/linus/test>
+::
+
+The attributes you can pass when creating an entry depend on the backend used. For the filesystem, we can pass the name and the type. You can also query these attributes later using ``attributes`` for the full list, or ``attribute`` for a single attribute. Some attributes can also be changed by setting them.
+
+With this new file entry, we can now write some data to it:
+
+:: common lisp
+(depot:with-open (transaction * :output 'character)
+  (depot:write-to transaction "Hello!"))
+; => "Hello!"
+::
+
+This should look very similar to standard ``with-open-file`` stuff, but underneath lie more powerful semantics. The ``transaction`` guarantees atomicity of the change, meaning multiple writers cannot run over each other, and the change cannot be seen until the transaction has been ``commit``ted. The commit here happens automatically when exiting ``with-open`` normally.
+
+You can also manually control transactions via ``open-entry``, ``read-from``, ``write-to``, ``commit``, and ``abort``.
+
+Now that we have written a new file, we can also read it back again:
+
+:: common lisp
+(depot:read-from ** 'character)
+; => "Hello!"
+::
+
+Excellent. To conclude this demonstration, let's clean up after ourselves by deleting the entry again:
+
+:: common lisp
+(depot:delete-entry ***)
+::
+
+Once deleted, an entry is invalidated and operating on it is no longer allowed.
+
+Finally, some entries in a depot may themselves represent a depot in another backend. For instance, a zip archive stored in a file may itself be a depot. To 'realise' this fact, you can call ``realize-entry`` on the entry. The second argument can be ``T`` to query all backends, or a specific ``realizer`` instance of a backend to force conversion of a particular kind. If successful, it should return a new ``depot`` or ``entry`` instance that you can use in the context of the new backend.
+
+There's a few more functions to query entries within a depot more efficiently, and get information out of an entry. You can find them linked in the ``depot``  and ``entry`` documentation sections.
+
+## Writing New Backends
