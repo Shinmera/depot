@@ -489,6 +489,47 @@ place.
 See OPEN-ENTRY
 See TRANSACTION")
 
+  (function register-realizer
+    "Register a realizer.
+
+You can pass a symbol naming the class of a realizer, a realizer
+subclass, or a realizer instance.
+
+See REALIZER
+See REMOVE-REALIZER
+See DEFINE-REALIZER")
+
+  (function remove-realizer
+    "Deregisters the realizer.
+
+You can pass a symbol naming the class of a realizer, a realizer
+subclass, or a realizer instance.
+
+See REALIZER
+See REGISTER-REALIZER
+See DEFINE-REALIZER")
+
+  (function define-realizer
+    "Define a new realizer.
+
+This does the following:
+
+If no class named NAME exists yet, it is defined as a subclass of
+REALIZER. For each of the DISPATCHERS in the body it defines a method
+on REALIZE-ENTRY, with the structure of each dispatcher being as
+follows:
+
+  ((var class) . body)
+
+CLASS naming a class that the entry must be a subclass of, and VAR
+being the variable to which the entry is bound. BODY being the forms
+that are executed when a matching entry is being realised.
+
+See REALIZER
+See REGISTER-REALIZER
+See REMOVE-REALIZER
+See REALIZE-ENTRY")
+
   (function entry*
     "Resolves a chain of depot entries.
 

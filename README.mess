@@ -74,4 +74,13 @@ Finally, some entries in a depot may themselves represent a depot in another bac
 
 There's a few more functions to query entries within a depot more efficiently, and get information out of an entry. You can find them linked in the ``depot``  and ``entry`` documentation sections.
 
+## Available Backends
+The following storage backends are supported:
+
+- pathname
+- zip (via depot-zip)
+
 ## Writing New Backends
+If you have a new storage backend that you would like to support with the depot protocol, all you need to do is create subclasses of ``depot``, ``entry``, and ``transaction``, and implement methods for the generic functions mentioned in their documentation sections.
+
+If your backend covers something that can be embedded in another depot, you'll also want to use ``define-realizer`` to define appropriate conversion functions.
