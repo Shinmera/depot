@@ -379,6 +379,9 @@ invalidated.
 SEQUENCE must be a lisp sequence type. START and END may be indices
 into this sequence designating a subsequence to write.
 
+If another write was committed after the transaction was created, but
+before this call an error of type WRITE-CONFLICT may be signalled.
+
 You may also call this on an ENTRY directly, in which case it will
 construct a transaction, write the sequence, and immediately attempt
 to COMMIT it.
@@ -402,6 +405,9 @@ reached, or the end of the transaction is reached.
 
 Returns the index of the last element in the sequence that was
 modified.
+
+If another write was committed after the transaction was created, but
+before this call an error of type READ-INVALIDATED may be signalled.
 
 You may also call this on an ENTRY directly, in which case it will
 construct a transaction, read the sequence, and immediately attempt

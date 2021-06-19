@@ -164,6 +164,7 @@
 (defclass file-write-transaction (stream-transaction)
   ())
 
+;; FIXME: check transaction semantics via timestamps.
 (defmethod open-entry ((file file) (direction (eql :output)) element-type &key (external-format :default))
   (let* ((pathname (to-pathname file))
          (tmp (make-pathname :name (format NIL "~a-tmp~d~d" (pathname-name pathname) (get-universal-time) (random 100)))))
