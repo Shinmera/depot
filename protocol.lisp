@@ -80,9 +80,12 @@
   `(let ((,transaction (open-entry ,entry ,direction ,element-type ,@args)))
      (restart-case
          (unwind-protect
-              (let ((,transaction ,transaction))
-                ,@body)
-           (when ,transaction (commit ,transaction)))
+              (multiple-value-prog1
+                  (let ((,transaction ,transaction))
+                    ,@body)
+                (commit ,transaction)
+                (setf ,transaction NIL))
+           (when ,transaction (abort ,transaction)))
        (abort (&optional e)
          :report "Abort the entry open."
          (declare (ignore e))
@@ -96,22 +99,6 @@
       (error 'not-a-depot :object entry)))
 
 ;;;; Defaulting methods
-;;; Thanks to these only the following functions need to be implemented to complete the interfaces:
-;;;   DEPOT
-;;;   - LIST-ENTRIES
-;;;   - MAKE-ENTRY
-;;;   ENTRY
-;;;   - ATTRIBUTES
-;;;   - (SETF ATTRIBUTES)
-;;;   - DELETE-ENTRY
-;;;   - OPEN-ENTRY
-;;;   TRANSACTION
-;;;   - SIZE
-;;;   - ABORT
-;;;   - COMMIT
-;;;   - WRITE-TO
-;;;   - READ-FROM
-;;; All other functions /may/ be implemented in order to provide a more efficient interface.
 (defmethod list-entries ((depot depot))
   (error 'unsupported-operation :operation 'list-entries :object depot))
 
@@ -170,8 +157,7 @@
 
 (defmethod read-from ((entry entry) (vector vector) &key start end)
   (with-open (tx entry :input (array-element-type vector))
-    (read-from tx vector :start start :end end)
-    entry))
+    (read-from tx vector :start start :end end)))
 
 (defmethod read-from ((entry entry) (target (eql 'byte)) &key start end)
   (declare (ignore start end))

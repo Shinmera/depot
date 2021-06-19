@@ -15,6 +15,8 @@
    #:id
    #:permission-denied
    #:depot-full
+   #:entry-already-exists
+   #:entry-does-not-exist
    #:unsupported-operation
    #:operation
    #:transaction-aborted
