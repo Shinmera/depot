@@ -69,7 +69,7 @@
 
 (defmethod realize-entry ((entry entry) (all (eql T)))
   (loop for realizer being the hash-keys of *entry-realizers*
-        thereis (realize-entry entry realizer)))
+        thereis (ignore-errors (realize-entry entry realizer))))
 
 (defun entry* (depot &rest ids)
   (loop for id in ids
