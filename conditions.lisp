@@ -31,12 +31,12 @@
   "The depot~%  ~a~%is full and cannot take any new entries." object)
 
 (define-condition* entry-already-exists (depot-condition error)
-  ((attributes :initarg :attributes :initform (arg! :attributes) :reader attributes))
-  "The depot~%  ~a~%cannot create an entry with the requested attributes~%  ~a~%as it would conflict with an existing entry.")
+  ((attributes :initarg :attributes :initform () :reader attributes))
+  "The depot~%  ~a~%cannot create an entry with the requested attributes~%  ~a~%as it would conflict with an existing entry." object attributes)
 
 (define-condition* entry-does-not-exist (depot-condition error)
   ()
-  "The operation on the entry~%  ~a~%cannot be completed as ")
+  "The operation on the entry~%  ~a~%cannot be completed as it does not exist." object)
 
 (define-condition* unsupported-operation (depot-condition error)
   ((operation :initarg :operation :initform (arg! :operation) :reader operation))

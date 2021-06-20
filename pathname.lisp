@@ -161,28 +161,48 @@
 (defmethod delete-entry ((entry file))
   (delete-file (to-pathname entry)))
 
-(defclass file-write-transaction (stream-transaction)
+(defclass file-transaction (stream-transaction)
+  ((timestamp :initarg :timestamp :reader timestamp)))
+
+(defclass file-write-transaction (file-transaction)
   ())
 
-;; FIXME: check transaction semantics via timestamps.
 (defmethod open-entry ((file file) (direction (eql :output)) element-type &key (external-format :default))
   (let* ((pathname (to-pathname file))
          (tmp (make-pathname :name (format NIL "~a-tmp~d~d" (pathname-name pathname) (get-universal-time) (random 100)))))
-    (make-instance 'file-write-transaction :stream (open tmp :direction direction :element-type element-type :external-format external-format) :entry file)))
+    (make-instance 'file-write-transaction :stream (open tmp :direction direction :element-type element-type :external-format external-format)
+                                           :entry file
+                                           :timestamp (when (probe-file pathname) (file-write-date pathname)))))
 
 (defmethod commit ((transaction file-write-transaction) &key)
-  (rename-file (to-stream transaction) (to-pathname (target transaction)))
+  (let ((pathname (to-pathname (target transaction))))
+    (if (null (timestamp transaction))
+        (when (probe-file pathname)
+          (cerror "Ignore and commit anyway." 'entry-already-exists :object (depot (target transaction)) :attributes (attributes (target transaction))))
+        (when (< (timestamp transaction) (file-write-date pathname))
+          (cerror "Ignore and commit anyway." 'write-conflict :object transaction)))
+    (rename-file (to-stream transaction) pathname))
   (call-next-method))
 
 (defmethod abort ((transaction file-write-transaction) &key)
   (delete-file (to-stream file))
   (call-next-method))
 
-(defclass file-read-transaction (stream-transaction)
+(defclass file-read-transaction (file-transaction)
   ())
 
 (defmethod open-entry ((file file) (direction (eql :input)) element-type &key (external-format :default))
-  (make-instance 'file-read-transaction :stream (open (to-pathname file) :direction direction :element-type element-type :external-format external-format) :entry file))
+  (let ((pathname (to-pathname file)))
+    (make-instance 'file-read-transaction :stream (open pathname :direction direction :element-type element-type :external-format external-format)
+                                          :entry file
+                                          :timestamp (file-write-date pathname))))
+
+(defmethod commit ((transaction file-read-transaction) &key)
+  (let ((pathname (to-pathname (target transaction))))
+    (cond ((not (probe-file pathname))
+           (cerror "Ignore and commit anyway." 'entry-does-not-exist :object (target transaction)))
+          ((< (timestamp transaction) (file-write-date pathname))
+           (cerror "Ignore and commit anyway." 'read-invalidated :object transaction)))))
 
 (unless (boundp '*os-depot*)
   (setf *os-depot* (make-instance 'os-depot)))
