@@ -10,6 +10,7 @@
    (#:depot #:org.shirakumo.depot)
    (#:zippy #:org.shirakumo.zippy))
   (:export
+   #:zip
    #:zip-archive
    #:zip-entry
    #:zip-directory
