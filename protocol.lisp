@@ -48,11 +48,11 @@
   (defun register-realizer (realizer)
     (let ((realizer (ensure-realizer realizer)))
       (check-type realizer realizer)
-      (setf (gethash realizer *entry-realizers*) realizer)))
+      (setf (gethash (type-of realizer) *entry-realizers*) realizer)))
 
   (defun remove-realizer (realizer)
     (let ((realizer (ensure-realizer realizer)))
-      (remhash realizer *entry-realizers*))))
+      (remhash (type-of realizer) *entry-realizers*))))
 
 (defmacro define-realizer (name &body dispatchers)
   (let ((nameg (gensym "NAME")))
@@ -68,8 +68,12 @@
        (register-realizer ',name))))
 
 (defmethod realize-entry ((entry entry) (all (eql T)))
-  (loop for realizer being the hash-keys of *entry-realizers*
+  (loop for realizer being the hash-values of *entry-realizers*
         thereis (ignore-errors (realize-entry entry realizer))))
+
+(defmethod realize-entry ((entry entry) (realizer symbol))
+  (realize-entry entry (or (gethash realizer *entry-realizers*)
+                           (error "~s is not a registered realizer." realizer))))
 
 (defun entry* (depot &rest ids)
   (loop for id in ids
