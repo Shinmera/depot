@@ -169,24 +169,29 @@
 
 (defmethod open-entry ((file file) (direction (eql :output)) element-type &key (external-format :default))
   (let* ((pathname (to-pathname file))
-         (tmp (make-pathname :name (format NIL "~a-tmp~d~d" (pathname-name pathname) (get-universal-time) (random 100)))))
+         (tmp (make-pathname :name (format NIL "~a-tmp~d~d" (pathname-name pathname) (get-universal-time) (random 100)) :defaults pathname)))
     (make-instance 'file-write-transaction :stream (open tmp :direction direction :element-type element-type :external-format external-format)
                                            :entry file
                                            :timestamp (when (probe-file pathname) (file-write-date pathname)))))
 
 (defmethod commit ((transaction file-write-transaction) &key)
+  (call-next-method)
   (let ((pathname (to-pathname (target transaction))))
-    (if (null (timestamp transaction))
-        (when (probe-file pathname)
-          (cerror "Ignore and commit anyway." 'entry-already-exists :object (depot (target transaction)) :attributes (attributes (target transaction))))
-        (when (< (timestamp transaction) (file-write-date pathname))
-          (cerror "Ignore and commit anyway." 'write-conflict :object transaction)))
-    (rename-file (to-stream transaction) pathname))
-  (call-next-method))
+    (unwind-protect
+         (progn
+           (if (null (timestamp transaction))
+               (when (probe-file pathname)
+                 (cerror "Ignore and commit anyway." 'entry-already-exists :object (depot (target transaction)) :attributes (attributes (target transaction))))
+               (when (< (timestamp transaction) (file-write-date pathname))
+                 (cerror "Ignore and commit anyway." 'write-conflict :object transaction)))
+           (rename-file (to-stream transaction) pathname))
+      (ignore-errors
+       (when (probe-file (to-stream transaction))
+         (delete-file (to-stream transaction)))))))
 
 (defmethod abort ((transaction file-write-transaction) &key)
-  (delete-file (to-stream file))
-  (call-next-method))
+  (call-next-method)
+  (ignore-errors (delete-file (to-stream transaction))))
 
 (defclass file-read-transaction (file-transaction)
   ())
