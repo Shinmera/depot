@@ -152,7 +152,7 @@
   (equal value (attribute attribute entry)))
 
 (defmethod id ((entry entry))
-  (getf (attributes entry) :id))
+  (attribute :id entry))
 
 (defmethod write-to ((entry entry) (vector vector) &key start end)
   (with-open (tx entry :output (array-element-type vector))

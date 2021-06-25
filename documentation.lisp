@@ -23,10 +23,15 @@ See DEPOT-CONDITION")
 
 See DEPOT-CONDITION
 See ID")
+
+  (type no-such-attribute
+    "Error signalled if a requested attribute does not exist.
+
+See DEPOT-CONDITION
+See ATTRIBUTE")
   
   (type permission-denied
-    "Error signalled if an action cannot be performed due to security
-    constraints.
+    "Error signalled if an action cannot be performed due to security constraints.
 
 See DEPOT-CONDITION")
   
@@ -261,6 +266,9 @@ See ENTRY")
 
 The available attributes are dependent on the entry and depot used.
 
+If the requested attribute does not exist, an error of type
+NO-SUCH-ATTRIBUTE may be signalled.
+
 See ENTRY")
   
   (function attributes
@@ -283,7 +291,10 @@ See ATTRIBUTE")
     "Accesses a single attribute of the entry.
 
 Which attributes are available depend on the depot/entry used. The
-only attribute that is required is the :ID attribute. 
+only attribute that is required is the :ID attribute.
+
+If the requested attribute does not exist, an error of type
+NO-SUCH-ATTRIBUTE is signalled.
 
 When setting this place, If the attribute cannot be changed, an error
 of type PERMISSION-DENIED may be signalled.
