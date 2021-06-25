@@ -14,6 +14,7 @@
    #:no-such-entry
    #:id
    #:no-such-attribute
+   #:name
    #:permission-denied
    #:depot-full
    #:entry-already-exists

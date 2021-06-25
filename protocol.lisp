@@ -139,10 +139,13 @@
 (defmethod query-entry ((depot depot) &rest args &key &allow-other-keys)
   (first (apply #'query-entries depot args)))
 
-(defmethod attribute (name entry)
-  (getf (attributes entry) name))
+(defmethod attribute (name (entry entry))
+  (let ((value (getf (attributes entry) name #1='#:none)))
+    (if (eq value #1#)
+        (error 'no-such-attribute :object entry :name name)
+        value)))
 
-(defmethod (setf attribute) (value name entry)
+(defmethod (setf attribute) (value name (entry entry))
   (let ((attributes (attributes entry)))
     (setf (getf attributes name) value)
     (setf (attributes entry) attributes)

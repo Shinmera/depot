@@ -23,8 +23,8 @@
   "The depot~%  ~a~%does not have an entry with the ID~%  ~a" object id)
 
 (define-condition* no-such-attribute (depot-condition error)
-  ((attribute :initarg :attribute :initform (arg! :attribute) :reader attribute))
-  "The entry~%  ~a~%does not have an attribute named~%  ~a" object attribute)
+  ((name :initarg :name :initform (arg! :name) :reader name))
+  "The entry~%  ~a~%does not have an attribute named~%  ~a" object name)
 
 (define-condition* permission-denied (depot-condition error)
   ()

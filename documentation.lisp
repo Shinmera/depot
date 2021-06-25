@@ -28,7 +28,12 @@ See ID")
     "Error signalled if a requested attribute does not exist.
 
 See DEPOT-CONDITION
-See ATTRIBUTE")
+See NAME")
+
+  (function name
+    "Returns the name of the attribute.
+
+See NO-SUCH-ATTRIBUTE")
   
   (type permission-denied
     "Error signalled if an action cannot be performed due to security constraints.
