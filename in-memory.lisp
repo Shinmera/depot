@@ -25,14 +25,14 @@
 (defmethod depot:query-entries ((depot depot) &rest attributes &key (id NIL id-p) &allow-other-keys)
   (flet ((test (entry)
            (loop for (key val) on attributes by #'cddr
-                 always (depot:entry-matches-p entry key val)))))
-  (if id-p
-      (let ((entry (gethash id (entries depot))))
-        (when (and entry (test entry))
-          (list entry)))
-      (loop for entry being the hash-values of (entries depot)
-            when (test entry)
-            collect entry)))
+                 always (depot:entry-matches-p entry key val))))
+    (if id-p
+        (let ((entry (gethash id (entries depot))))
+          (when (and entry (test entry))
+            (list entry)))
+        (loop for entry being the hash-values of (entries depot)
+              when (test entry)
+              collect entry))))
 
 (defmethod depot:entry (id (depot depot))
   (or (gethash id (entries depot))
@@ -44,13 +44,13 @@
 (defmethod depot:make-entry ((depot depot) &rest attributes)
   (let ((id (getf attributes :id)))
     (unless id
-      (error "ID argument is required.")))
-  (when (depot:entry-exists-p id depot)
-    (error 'depot:entry-already-exists :object depot :attributes attributes))
-  (let ((table (make-hash-table :test 'eql)))
-    (loop for (key val) on attributes
-          do (setf (gethash key table) value))
-    (setf (gethash id (entries depot)) (make-instance 'entry :depot depot :attributes table))))
+      (error "ID argument is required."))
+    (when (depot:entry-exists-p id depot)
+      (error 'depot:entry-already-exists :object depot :attributes attributes))
+    (let ((table (make-hash-table :test 'eql)))
+      (loop for (key val) on attributes
+            do (setf (gethash key table) val))
+      (setf (gethash id (entries depot)) (make-instance 'entry :depot depot :attributes table)))))
 
 (defclass entry (depot:entry)
   ((depot :initform (depot::arg! :depot) :initarg :depot :accessor depot:depot)
@@ -58,7 +58,7 @@
    (payload :initform #() :initarg :payload :accessor payload)))
 
 (defmethod depot:delete-entry ((entry entry))
-  (remhash (gethash :id (attributes entry)) (entries (depot entry))))
+  (remhash (gethash :id (attributes entry)) (entries (depot:depot entry))))
 
 (defmethod entry-matches-p ((entry entry) attribute value)
   (let ((attr (gethash attribute (attributes entry) #1='#:none)))
@@ -103,7 +103,7 @@
   (let* ((start (or start 0))
          (end (or end (length sequence)))
          (new (new transaction))
-         (index (fill-pointer index))
+         (index (fill-pointer new))
          (end2 (+ index (- end start))))
     (when (< (array-total-size new) end2)
       (adjust-array new (* block-size (1+ (floor end2 block-size))) :fill-pointer end2))
@@ -117,7 +117,7 @@
   (length (payload transaction)))
 
 (defmethod depot:commit ((transaction write-transaction) &key)
-  (unless (atomics:cas (payload (depot:target transaction))
+  (unless (atomics:cas (slot-value (depot:target transaction) 'payload)
                        (payload transaction)
                        (new transaction))
     (error 'depot:write-conflict :object transaction)))
@@ -139,11 +139,13 @@
          (end (or end (length sequence)))
          (index (depot:index transaction))
          (payload (payload transaction))
-         (length (min (- end start) (- (length payload) index)))))
-  (replace sequence payload :start1 start :end1 (+ start length)
-                            :start2 index :end2 (+ index length))
-  (setf (depot:index transaction) (+ index length))
-  (+ start length))
+         (length (min (- end start) (- (length payload) index)))
+         (end1 (+ start length))
+         (end2 (+ index length)))
+    (replace sequence payload :start1 start :end1 end1
+                              :start2 index :end2 end2)
+    (setf (depot:index transaction) end2)
+    end1))
 
 (defmethod depot:size ((transaction read-transaction))
   (length (payload transaction)))
