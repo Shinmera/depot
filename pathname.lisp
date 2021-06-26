@@ -44,7 +44,7 @@
                      (setf depot (depot depot)))))
          (host (if (typep depot 'host)
                    (id depot)
-                   (pathanme-host *default-pathname-defaults*))))
+                   (pathname-host *default-pathname-defaults*))))
     (make-pathname :host host :device device :directory (list :absolute dirs)
                    :name name :type type :version (attribute :version entry))))
 
@@ -147,10 +147,10 @@
           :author (file-author pathname))))
 
 (defmethod attribute ((name (eql :name)) (entry file))
-  (normalize-path-component (pathname-name pathname)))
+  (normalize-path-component (pathname-name (to-pathname entry))))
 
 (defmethod attribute ((name (eql :type)) (entry file))
-  (normalize-path-component (pathname-type pathname)))
+  (normalize-path-component (pathname-type (to-pathname entry))))
 
 (defmethod attribute ((name (eql :write-date)) (entry file))
   (file-write-date (to-pathname entry)))
@@ -217,6 +217,7 @@
     (list host))
 
   (defmethod query-entries ((depot os-depot) &key ((:host _)))
+    (declare (ignore _))
     (list host))
 
   (defmethod id ((depot host))

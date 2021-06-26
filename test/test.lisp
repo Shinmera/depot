@@ -47,7 +47,9 @@
   (group (attributes)
     (fail (depot:make-entry depot :id "no-such-attribute" 'nope "nope")
         'depot:no-such-attribute)
-    ))
+    (let ((original (depot:attributes entry)))
+      (finish (setf (depot:attributes entry) ()))
+      (is equal original (depot:attributes entry)))))
 
 (define-test depot-pathname
   (let ((depot (of-type 'depot:directory (depot ""))))
