@@ -17,5 +17,6 @@
   :components ((:file "test"))
   :depends-on (:parachute
                :depot
-               :depot-zip)
+               :depot-zip
+               :depot-in-memory)
   :perform (asdf:test-op (op c) (uiop:symbol-call :parachute :test :org.shirakumo.depot.test)))
