@@ -119,11 +119,18 @@
                (push (make-instance 'file :depot depot :pathname file) entries))))
           (T (list-entries depot)))))
 
-(defmethod make-entry ((depot directory) &key name type)
-  (if (eql type :directory)
-      (make-instance 'directory :depot depot :pathname (merge-pathnames (make-pathname :directory `(:relative ,name))
-                                                                        (to-pathname depot)))
-      (make-instance 'file :depot depot :pathname (make-pathname :name name :type type :defaults (to-pathname depot)))))
+(defmethod make-entry ((depot directory) &key name type id)
+  (cond ((eql type :directory)
+         (make-instance 'directory :depot depot :pathname (merge-pathnames (make-pathname :directory `(:relative ,name))
+                                                                           (to-pathname depot))))
+        (T
+         (when id
+           (let ((dot (position #\. id :from-end T)))
+             (if dot
+                 (setf name (subseq id 0 dot)
+                       type (subseq id (1+ dot)))
+                 (setf name id))))
+         (make-instance 'file :depot depot :pathname (make-pathname :name name :type type :defaults (to-pathname depot))))))
 
 (defclass file (entry)
   ((depot :initarg :depot :reader depot)
