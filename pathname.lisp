@@ -181,6 +181,7 @@
                                            :entry file
                                            :timestamp (when (probe-file pathname) (file-write-date pathname)))))
 
+;; FIXME: testing for changes via timestamp only is error prone.
 (defmethod commit ((transaction file-write-transaction) &key)
   (call-next-method)
   (let ((target (to-pathname (target transaction)))
