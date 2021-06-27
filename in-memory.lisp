@@ -41,7 +41,7 @@
 (defmethod depot:entry-exists-p (id (depot depot))
   (gethash id (entries depot)))
 
-(defmethod depot:make-entry ((depot depot) &rest attributes)
+(defmethod depot:make-entry ((depot depot) &rest attributes &key &allow-other-keys)
   (let ((id (getf attributes :id)))
     (unless id
       (error "ID argument is required."))
@@ -95,7 +95,7 @@
    (new :initarg :new :accessor new)))
 
 (defmethod depot:open-entry ((entry entry) (direction (eql :output)) element-type &key (initial-size 4096))
-  (make-instance 'write-transaction :target entry
+  (make-instance 'write-transaction :entry entry
                                     :payload (payload entry)
                                     :new (make-array initial-size :element-type element-type :adjustable T :fill-pointer 0)))
 
@@ -106,7 +106,8 @@
          (index (fill-pointer new))
          (end2 (+ index (- end start))))
     (when (< (array-total-size new) end2)
-      (adjust-array new (* block-size (1+ (floor end2 block-size))) :fill-pointer end2))
+      (adjust-array new (* block-size (1+ (floor end2 block-size)))))
+    (setf (fill-pointer new) end2)
     (replace new sequence :start1 index :end1 end2
                           :start1 start :end2 end)))
 
@@ -130,11 +131,11 @@
    (index :initarg :index :initform 0 :accessor depot:index)))
 
 (defmethod depot:open-entry ((entry entry) (direction (eql :input)) element-type &key (start 0))
-  (make-instance 'read-transaction :target entry
+  (make-instance 'read-transaction :entry entry
                                    :payload (payload entry)
                                    :index start))
 
-(defmethod depot:read-from ((transaction read-transaction) sequence &key start end)
+(defmethod depot:read-from ((transaction read-transaction) (sequence sequence) &key start end)
   (let* ((start (or start 0))
          (end (or end (length sequence)))
          (index (depot:index transaction))

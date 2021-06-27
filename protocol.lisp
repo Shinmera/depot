@@ -157,30 +157,41 @@
 (defmethod id ((entry entry))
   (attribute :id entry))
 
-(defmethod write-to ((entry entry) (vector vector) &key start end)
-  (with-open (tx entry :output (array-element-type vector))
-    (write-to tx vector :start start :end end)
-    entry))
+(defmethod write-to ((entry entry) (target vector) &rest args &key &allow-other-keys)
+  (with-open (tx entry :output (array-element-type target))
+    (apply #'write-to tx target args)))
 
-(defmethod read-from ((entry entry) (vector vector) &key start end)
-  (with-open (tx entry :input (array-element-type vector))
-    (read-from tx vector :start start :end end)))
+(defmethod read-from ((entry entry) (target vector) &rest args &key &allow-other-keys)
+  (with-open (tx entry :input (array-element-type target))
+    (apply #'read-from tx target args)))
 
-(defmethod read-from ((entry entry) (target (eql 'byte)) &key start end)
-  (declare (ignore start end))
+(defmethod read-from ((entry entry) (target (eql 'byte)) &rest args &key &allow-other-keys)
   (with-open (tx entry :input '(unsigned-byte 8))
-    (let ((array (make-array (size tx) :element-type '(unsigned-byte 8))))
-      (read-from tx array)
-      array)))
+    (apply #'read-from tx target args)))
 
-(defmethod read-from ((entry entry) (target (eql 'character)) &key start end)
-  (declare (ignore start end))
+(defmethod read-from ((entry entry) (target (eql 'character)) &rest args &key &allow-other-keys)
   (with-open (tx entry :input 'character)
-    (with-output-to-string (out)
-      (loop with buffer = (make-array 4096 :element-type 'character)
-            for read = (read-from tx buffer)
-            until (= 0 read)
-            do (write-sequence buffer out :end read)))))
+    (apply #'read-from tx target args)))
+
+(defmethod read-from ((tx transaction) (target (eql 'byte)) &key start end)
+  (when start (setf (index tx) start))
+  (unless end (setf end (size tx)))
+  (let ((array (make-array (- end start) :element-type '(unsigned-byte 8))))
+    (read-from tx array)
+    array))
+
+(defmethod read-from ((tx transaction) (target (eql 'character)) &key start end (block-size 4096))
+  (if start
+      (setf (index tx) start)
+      (setf start 0))
+  (unless end (setf end (size tx)))
+  (with-output-to-string (out)
+    (loop with remaining = (- end start)
+          with buffer = (make-array block-size :element-type 'character)
+          for read = (read-from tx buffer)
+          until (or (= 0 read) (<= remaining 0))
+          do (write-sequence buffer out :end (min read remaining))
+             (decf remaining read))))
 
 (defclass stream-transaction (transaction)
   ((stream :initarg :stream :reader to-stream)))
@@ -201,10 +212,10 @@
 (defmethod commit ((transaction stream-transaction) &key)
   (close (to-stream transaction)))
 
-(defmethod write-to ((transaction stream-transaction) sequence &key start end)
+(defmethod write-to ((transaction stream-transaction) (sequence sequence) &key start end)
   (write-sequence sequence (to-stream transaction) :start (or start 0) :end end))
 
-(defmethod read-from ((transaction stream-transaction) sequence &key start end)
+(defmethod read-from ((transaction stream-transaction) (sequence sequence) &key start end)
   (read-sequence sequence (to-stream transaction) :start (or start 0) :end end))
 
 ;;;; TODO: This interface is /slow/ because there is no internal buffering going on at all.

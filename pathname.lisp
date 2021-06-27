@@ -183,18 +183,19 @@
 
 (defmethod commit ((transaction file-write-transaction) &key)
   (call-next-method)
-  (let ((pathname (to-pathname (target transaction))))
+  (let ((target (to-pathname (target transaction)))
+        (source (pathname (to-stream transaction))))
     (unwind-protect
          (progn
            (if (null (timestamp transaction))
-               (when (probe-file pathname)
+               (when (probe-file target)
                  (cerror "Ignore and commit anyway." 'entry-already-exists :object (depot (target transaction)) :attributes (attributes (target transaction))))
-               (when (< (timestamp transaction) (file-write-date pathname))
+               (when (< (timestamp transaction) (file-write-date target))
                  (cerror "Ignore and commit anyway." 'write-conflict :object transaction)))
-           (rename-file (to-stream transaction) pathname))
+           (rename-file source target))
       (ignore-errors
-       (when (probe-file (to-stream transaction))
-         (delete-file (to-stream transaction)))))))
+       (when (probe-file source)
+         (delete-file source))))))
 
 (defmethod abort ((transaction file-write-transaction) &key)
   (call-next-method)

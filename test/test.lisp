@@ -45,9 +45,8 @@
           'depot:read-invalidated)
       (depot:delete-entry entry)))
   (group (attributes)
-    (fail (depot:make-entry depot :id "no-such-attribute" 'nope "nope")
-        'depot:no-such-attribute)
-    (let ((original (depot:attributes entry)))
+    (let* ((entry (of-type 'depot:entry (depot:make-entry depot :id "attributes")))
+           (original (isnt eql () (depot:attributes entry))))
       (finish (setf (depot:attributes entry) ()))
       (is equal original (depot:attributes entry)))))
 
