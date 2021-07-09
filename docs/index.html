@@ -1,0 +1,555 @@
+<!DOCTYPE html> <html lang="EN"> <head> <meta charset="utf-8"> <title>Depot</title> <style>html body{margin:0 auto 0 auto;padding:20px;max-width:1024px;font-family:sans-serif;font-size:14pt;overflow-y:scroll;}html body a{text-decoration:none;}html body a[href]{color:#0055AA;}html body a[href]:hover{color:#0088EE;}html body pre{background:#FAFAFA;border:1px solid #DDDDDD;padding:0.75em;overflow-x:auto;}html body pre >code a[href]{color:#223388;}article.project h1{font-size:1.7em;}article.project h1,article.project h2,article.project h3,article.project h4,article.project h5,article.project h6{margin:0.2em 0 0.1em 0;text-indent:1em;}article.project >header{text-align:center;}article.project >header img.logo{display:block;margin:auto;max-height:170px;}article.project >header h1{display:inline-block;text-indent:0;font-size:2.5em;}article.project >header .version{vertical-align:bottom;}article.project >header .languages{margin-top:-0.5em;text-transform:capitalize;}article.project >header .description{margin:0;}article.project >header .pages{margin-top:0.5em;font-size:1.2em;text-transform:capitalize;}article.project >header .pages a{display:inline-block;padding:0 0.2em;}article.project >section{margin:1em 0 1em 0;}article.project #index >ul{list-style:none;margin:0;padding:0;}article.project .row label{display:inline-block;min-width:8em;}article.project #system .row{display:flex;}article.project #system #dependencies{display:inline;margin:0;padding:0;}article.project #system #dependencies li{display:inline;padding:0 0.2em;}article.definition{margin:1em 0 0 0;}article.definition >header h1,article.definition >header h2,article.definition >header h3,article.definition >header h4,article.definition >header h5,article.definition >header h6{text-indent:0;display:inline-block;}article.definition >header ul{display:inline-block;list-style:none;margin:0;padding:0;}article.definition >header ul li{display:inline-block;padding:0 0.2em 0 0;}article.definition >header .visibility{display:none;}article.definition >header .visibility,article.definition >header .type{text-transform:lowercase;}article.definition >header .source-link{visibility:hidden;float:right;}article.definition >header .source-link:after{visibility:visible;content:"[SRC]";}article.definition .docstring{margin:0 0 0 1em;}article.definition .docstring pre{font-size:0.8em;white-space:pre-wrap;}.definition.package >header ul.nicknames{display:inline-block;list-style:none;margin:0;padding:0 0 0 1em;}.definition.package >header ul.nicknames li{display:inline;}.definition.package >header ul.nicknames:before{content:"(";}.definition.package >header ul.nicknames:after{content:")";}.definition.package ul.definitions{margin:0;list-style:none;padding:0 0 0 0.5em;}.definition.callable >header .name:before,.definition.type >header .name:before{content:"(";font-weight:normal;}.definition.callable >header .arguments:after,.definition.type >header .arguments:after{content:")";}.definition.callable >header .arguments .arguments:before,.definition.type >header .arguments .arguments:before{content:"(";}.definition.callable >header .arguments .argument,.definition.type >header .arguments .argument{padding:0;}.definition.callable >header .arguments .argument.lambda-list-keyword,.definition.type >header .arguments .argument.lambda-list-keyword{color:#991155;}.definition li>mark{background:none;border-left:0.3em solid #0088EE;padding-left:0.3em;display:block;} </style> </head> <body> <article class="project"> <header>   <h1>depot</h1>   <span class="version">1.0.0</span>    <p class="description">Protocol for transparent collections of files.</p>   <nav class="pages"> <a href="index.html">depot</a>  <a href="depot-in-memory/index.html">depot in memory</a>  <a href="depot-zip/index.html">depot zip</a> </nav>  </header> <section id="documentation"><article><h2 id="about this">About This</h2><p>This is a system presenting a protocol for &quot;file systems&quot; – things that present a collection of &quot;files,&quot; which are things that have several attributes, and a central data payload. Most notably this includes the OS filesystem, but can also be used to address other filesystem-like things like archives, object stores, etc. in the same manner.</p><h2 id="how to">How To</h2><p>For the purposes of this introduction we will assume that the package <code>org.shirakumo.depot</code> has the local nickname <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">depot</a></code>.</p><p>While depot interactions depend directly on the storage backend used, most operating systems have a hierarchical file system that we can access. We will concentrate on that backend in this tutorial.</p><p>First, we can access the file system through the <code><a href="#VARIABLE%20ORG.SHIRAKUMO.DEPOT%3A%2AOS-DEPOT%2A" class="xref">*os-depot*</a></code> variable, which gives us a base <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">depot</a></code>. We can then ask it for what entries it has:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(<a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ALIST-ENTRIES" class="xref">depot:list-entries</a> <a href="#VARIABLE%20ORG.SHIRAKUMO.DEPOT%3A%2AOS-DEPOT%2A" class="xref">depot:*os-depot*</a>)
+; =&gt; (#&lt;HOST&gt;)</pre></code><p>Not much going on there, but the <code><a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AHOST" class="xref">host</a></code> is another <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">depot</a></code>, so we can do the same again:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(<a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ALIST-ENTRIES" class="xref">depot:list-entries</a> (<a href="http://l1sp.org/cl/first" class="xref">first</a> <a href="http://l1sp.org/cl/%2A" class="xref">*</a>))
+; =&gt; (#&lt;DEVICE /&gt;)</pre></code><p>Aha! Now we get a <code><a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3ADEVICE" class="xref">device</a></code> object, which on this system seems to represent the root directory. Let's ask it for entries once again:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(<a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ALIST-ENTRIES" class="xref">depot:list-entries</a> (<a href="http://l1sp.org/cl/first" class="xref">first</a> <a href="http://l1sp.org/cl/%2A" class="xref">*</a>))
+; =&gt; (#&lt;DIRECTORY /var/&gt; ...)</pre></code><p>This should give a list of <code><a href="http://l1sp.org/cl/directory" class="xref">directory</a></code>s present on the device's root, and possibly some <code><a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AFILE" class="xref">file</a></code>s as well. Before we go any further though, traversing a deeply hierarchical system like this is kind of tedious. We can instead use <code><a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY%2A" class="xref">entry*</a></code> which traverses multiple levels at once, or even better for pathnames we can use <code><a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AFROM-PATHNAME" class="xref">from-pathname</a></code>.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(<a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AFROM-PATHNAME" class="xref">depot:from-pathname</a> (<a href="http://l1sp.org/cl/user-homedir-pathname" class="xref">user-homedir-pathname</a>))
+; =&gt; #&lt;DIRECTORY /home/linus/&gt;</pre></code><p>Now here we can do something a bit more interesting aside from listing its entries. We can create a new one:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(<a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AMAKE-ENTRY" class="xref">depot:make-entry</a> <a href="http://l1sp.org/cl/%2A" class="xref">*</a> :name &quot;test&quot;)
+; =&gt; #&lt;FILE /home/linus/test&gt;</pre></code><p>The attributes you can pass when creating an entry depend on the backend used. For the filesystem, we can pass the name and the type. You can also query these attributes later using <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AATTRIBUTES" class="xref">attributes</a></code> for the full list, or <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AATTRIBUTE" class="xref">attribute</a></code> for a single attribute. Some attributes can also be changed by setting them.</p><p>With this new file entry, we can now write some data to it:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(<a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AWITH-OPEN" class="xref">depot:with-open</a> (transaction <a href="http://l1sp.org/cl/%2A" class="xref">*</a> :output 'character)
+  (depot:write-to transaction &quot;Hello!&quot;))
+; =&gt; &quot;Hello!&quot;</pre></code><p>This should look very similar to standard <code><a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AWITH-OPEN-FILE" class="xref">with-open-file</a></code> stuff, but underneath lie more powerful semantics. The <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">transaction</a></code> guarantees atomicity of the change, meaning multiple writers cannot run over each other, and the change cannot be seen until the transaction has been <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ACOMMIT" class="xref">commit</a></code>ted. The commit here happens automatically when exiting <code><a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AWITH-OPEN" class="xref">with-open</a></code> normally.</p><p>You can also manually control transactions via <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOPEN-ENTRY" class="xref">open-entry</a></code>, <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREAD-FROM" class="xref">read-from</a></code>, <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AWRITE-TO" class="xref">write-to</a></code>, <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ACOMMIT" class="xref">commit</a></code>, and <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AABORT" class="xref">abort</a></code>.</p><p>Now that we have written a new file, we can also read it back again:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(<a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREAD-FROM" class="xref">depot:read-from</a> <a href="http://l1sp.org/cl/%2A%2A" class="xref">**</a> 'character)
+; =&gt; &quot;Hello!&quot;</pre></code><p>Excellent. To conclude this demonstration, let's clean up after ourselves by deleting the entry again:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(<a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADELETE-ENTRY" class="xref">depot:delete-entry</a> <a href="http://l1sp.org/cl/%2A%2A%2A" class="xref">***</a>)</pre></code><p>Once deleted, an entry is invalidated and operating on it is no longer allowed.</p><p>Finally, some entries in a depot may themselves represent a depot in another backend. For instance, a zip archive stored in a file may itself be a depot. To 'realise' this fact, you can call <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREALIZE-ENTRY" class="xref">realize-entry</a></code> on the entry. The second argument can be <code><a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AT" class="xref">T</a></code> to query all backends, or a specific <code><a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AREALIZER" class="xref">realizer</a></code> instance of a backend to force conversion of a particular kind. If successful, it should return a new <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">depot</a></code> or <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">entry</a></code> instance that you can use in the context of the new backend.</p><p>There's a few more functions to query entries within a depot more efficiently, and get information out of an entry. You can find them linked in the <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">depot</a></code> and <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">entry</a></code> documentation sections.</p><h2 id="available backends">Available Backends</h2><p>The following storage backends are supported:</p><ul><li><p>pathname</p></li><li><p>zip (via depot-zip)</p></li></ul><h2 id="writing new backends">Writing New Backends</h2><p>If you have a new storage backend that you would like to support with the depot protocol, all you need to do is create subclasses of <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">depot</a></code>, <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">entry</a></code>, and <code><a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">transaction</a></code>, and implement methods for the generic functions mentioned in their documentation sections.</p><p>If your backend covers something that can be embedded in another depot, you'll also want to use <code><a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEFINE-REALIZER" class="xref">define-realizer</a></code> to define appropriate conversion functions.</p></article></section>   <section id="system"> <h2>System Information</h2>  <div class="row"> <label for="version">Version:</label> <a id="version">1.0.0</a> </div>   <div class="row"> <label for="dependencies">Dependencies:</label> <ul id="dependencies"><li><a class="external" href="https://Shinmera.github.io/documentation-utils/">documentation-utils</a></li><li><a class="external">trivial-gray-streams</a></li></ul> </div>   <div class="row"> <label for="author">Author:</label> <a id="author" href="mailto:shinmera@tymoon.eu">Nicolas Hafner</a> </div>   <div class="row"> <label for="license">License:</label> <a id="license" href="https://github.com/shinmera/depot/blob/master/LICENSE">zlib</a> </div>   <div class="row"> <label for="homepage">Homepage:</label> <a id="homepage" href="https://shinmera.github.io/depot">https://shinmera.github.io/depot</a> </div>   <div class="row"> <label for="sources">Sources:</label> <a id="sources" href="https://github.com/Shinmera/depot.git">https://github.com/Shinmera/depot.git</a> </div>  </section>    <section id="index"> <h2>Definition Index</h2> <ul> <li> <article class="definition package" id="PACKAGE ORG.SHIRAKUMO.DEPOT"> <header> <h3> <a href="#PACKAGE%20ORG.SHIRAKUMO.DEPOT">ORG.SHIRAKUMO.DEPOT</a> </h3> <ul class="nicknames"></ul>  </header> <div class="docstring"><i>No documentation provided.</i></div> <ul class="definitions"> <li> <article class="definition special-variable" id="VARIABLE ORG.SHIRAKUMO.DEPOT:*OS-DEPOT*"> <header> <span class="visibility">EXTERNAL</span> <span class="type">SPECIAL-VARIABLE</span> <h4 class="name"> <a href="#VARIABLE%20ORG.SHIRAKUMO.DEPOT%3A%2AOS-DEPOT%2A">*OS-DEPOT*</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/pathname.lisp#L9">Source</a>  </header> <div class="docstring"><pre>Contains the base depot for the operating system according to the implementation.
+
+See <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AOS-DEPOT" class="xref">OS-DEPOT</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:DEPOT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3ADEPOT">DEPOT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L12">Source</a>  </header> <div class="docstring"><pre>Superclass for objects implementing the depot protocol.
+
+When implementing a new depot subclass, the following generic
+functions SHOULD be implemented:
+
+  - LIST-ENTRIES
+  - MAKE-ENTRY
+
+All other depot operations are implemented using fallback operations.
+You may however implement other, specialised methods as well should
+there be more efficient ways of implementing them.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ALIST-ENTRIES" class="xref">LIST-ENTRIES</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AQUERY-ENTRIES" class="xref">QUERY-ENTRIES</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AQUERY-ENTRY" class="xref">QUERY-ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY-EXISTS-P" class="xref">ENTRY-EXISTS-P</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AMAKE-ENTRY" class="xref">MAKE-ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENSURE-DEPOT" class="xref">ENSURE-DEPOT</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:DEVICE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3ADEVICE">DEVICE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/pathname.lisp#L224">Source</a>  </header> <div class="docstring"><pre>Base class for pathname devices.
+
+These correspond to pathname-device types.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:DIRECTORY"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3ADIRECTORY">DIRECTORY</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/pathname.lisp#L71">Source</a>  </header> <div class="docstring"><pre>Class representing directories on a standard operating system hierarchical file system.
+
+This is both a DEPOT and an ENTRY.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:ENTRY"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AENTRY">ENTRY</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L13">Source</a>  </header> <div class="docstring"><pre>Superclass for objects implementing the entry protocol.
+
+When implementing a new entry subclass, the following generic
+functions SHOULD be implemented:
+
+  - ATTRIBUTES
+  - (SETF ATTRIBUTES)
+  - DELETE-ENTRY
+  - OPEN-ENTRY
+
+Any other entry operations are implemented using fallback operations.
+You may however implement other, specialised methods as well should
+there be more efficient ways of implementing them.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADELETE-ENTRY" class="xref">DELETE-ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY-MATCHES-P" class="xref">ENTRY-MATCHES-P</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AATTRIBUTES" class="xref">ATTRIBUTES</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AATTRIBUTE" class="xref">ATTRIBUTE</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AID" class="xref">ID</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENSURE-DEPOT" class="xref">ENSURE-DEPOT</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOPEN-ENTRY" class="xref">OPEN-ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AWRITE-TO" class="xref">WRITE-TO</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREAD-FROM" class="xref">READ-FROM</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:FILE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AFILE">FILE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/pathname.lisp#L135">Source</a>  </header> <div class="docstring"><pre>Class representing files on a standard operating system hierarchical file system.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:FILE-READ-TRANSACTION"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AFILE-READ-TRANSACTION">FILE-READ-TRANSACTION</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/pathname.lisp#L205">Source</a>  </header> <div class="docstring"><pre>Class representing a read transaction from a file.
+
+See <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AFILE" class="xref">FILE</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOPEN-ENTRY" class="xref">OPEN-ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:FILE-WRITE-TRANSACTION"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AFILE-WRITE-TRANSACTION">FILE-WRITE-TRANSACTION</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/pathname.lisp#L174">Source</a>  </header> <div class="docstring"><pre>Class representing a write transaction to a file.
+
+The atomicity of the write is established by writing to a temporary
+file, which is then renamed to the existing file on commit.
+
+See <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AFILE" class="xref">FILE</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOPEN-ENTRY" class="xref">OPEN-ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:HOST"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AHOST">HOST</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/pathname.lisp#L12">Source</a>  </header> <div class="docstring"><pre>Base class for pathname hosts.
+
+These correspond to pathname-host types.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:OS-DEPOT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AOS-DEPOT">OS-DEPOT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/pathname.lisp#L11">Source</a>  </header> <div class="docstring"><pre>Base class for the operating system's file system depot.
+
+See <a href="#VARIABLE%20ORG.SHIRAKUMO.DEPOT%3A%2AOS-DEPOT%2A" class="xref">*OS-DEPOT*</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:REALIZER"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AREALIZER">REALIZER</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L11">Source</a>  </header> <div class="docstring"><pre>Superclass for objects implementing the realizer protocol.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREALIZE-ENTRY" class="xref">REALIZE-ENTRY</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREGISTER-REALIZER" class="xref">REGISTER-REALIZER</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREMOVE-REALIZER" class="xref">REMOVE-REALIZER</a>
+See <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEFINE-REALIZER" class="xref">DEFINE-REALIZER</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:STREAM-TRANSACTION"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3ASTREAM-TRANSACTION">STREAM-TRANSACTION</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L196">Source</a>  </header> <div class="docstring"><pre>Superclass for transactions that operate on a stream.
+
+Automatically handles the implementation of SIZE and INDEX for
+file-streams. 
+
+For all streams, ABORT and COMMIT will simply close the stream. It is
+up to the subclass to establish the proper ABORT and COMMIT
+semantics.
+
+For all streams, WRITE-TO and READ-FROM are implemented using
+WRITE-SEQUENCE and READ-SEQUENCE, respectively.
+
+TO-STREAM is also implemented to simply return the underlying stream.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATO-STREAM" class="xref">TO-STREAM</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:TRANSACTION"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION">TRANSACTION</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L14">Source</a>  </header> <div class="docstring"><pre>Superclass for objects implementing the transaction protocol.
+
+When implementing a new transaction subclass, the following generic
+functions SHOULD be implemented:
+
+  - SIZE
+  - INDEX
+  - ABORT
+  - COMMIT
+  - WRITE-TO
+  - READ-FROM
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATARGET" class="xref">TARGET</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AWRITE-TO" class="xref">WRITE-TO</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREAD-FROM" class="xref">READ-FROM</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ASIZE" class="xref">SIZE</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AINDEX" class="xref">INDEX</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATO-STREAM" class="xref">TO-STREAM</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ACOMMIT" class="xref">COMMIT</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AABORT" class="xref">ABORT</a></pre></div> </article> </li>  <li> <article class="definition class" id="CLASS ORG.SHIRAKUMO.DEPOT:TRANSACTION-STREAM"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CLASS</span> <h4 class="name"> <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION-STREAM">TRANSACTION-STREAM</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L223">Source</a>  </header> <div class="docstring"><pre>Gray stream wrapper around a transaction object.
+
+Attempts to implement all gray stream methods and translate them to
+depot transaction operations.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATO-STREAM" class="xref">TO-STREAM</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a></pre></div> </article> </li>  <li> <article class="definition condition" id="CONDITION ORG.SHIRAKUMO.DEPOT:DEPOT-CONDITION"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONDITION</span> <h4 class="name"> <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-CONDITION">DEPOT-CONDITION</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/conditions.lisp#L17">Source</a>  </header> <div class="docstring"><pre>Base condition for all conditions in the context of depots.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOBJECT" class="xref">OBJECT</a></pre></div> </article> </li>  <li> <article class="definition condition" id="CONDITION ORG.SHIRAKUMO.DEPOT:DEPOT-FULL"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONDITION</span> <h4 class="name"> <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-FULL">DEPOT-FULL</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/conditions.lisp#L33">Source</a>  </header> <div class="docstring"><pre>Error signalled if a depot cannot accept further content.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-CONDITION" class="xref">DEPOT-CONDITION</a></pre></div> </article> </li>  <li> <article class="definition condition" id="CONDITION ORG.SHIRAKUMO.DEPOT:ENTRY-ALREADY-EXISTS"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONDITION</span> <h4 class="name"> <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3AENTRY-ALREADY-EXISTS">ENTRY-ALREADY-EXISTS</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/conditions.lisp#L37">Source</a>  </header> <div class="docstring"><pre>Error signalled if the requested entry already exists.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-CONDITION" class="xref">DEPOT-CONDITION</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AATTRIBUTES" class="xref">ATTRIBUTES</a></pre></div> </article> </li>  <li> <article class="definition condition" id="CONDITION ORG.SHIRAKUMO.DEPOT:ENTRY-DOES-NOT-EXIST"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONDITION</span> <h4 class="name"> <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3AENTRY-DOES-NOT-EXIST">ENTRY-DOES-NOT-EXIST</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/conditions.lisp#L41">Source</a>  </header> <div class="docstring"><pre>Error signalled if the entry to operate on no longer exists.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-CONDITION" class="xref">DEPOT-CONDITION</a></pre></div> </article> </li>  <li> <article class="definition condition" id="CONDITION ORG.SHIRAKUMO.DEPOT:NO-SUCH-ATTRIBUTE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONDITION</span> <h4 class="name"> <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ANO-SUCH-ATTRIBUTE">NO-SUCH-ATTRIBUTE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/conditions.lisp#L25">Source</a>  </header> <div class="docstring"><pre>Error signalled if a requested attribute does not exist.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-CONDITION" class="xref">DEPOT-CONDITION</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ANAME" class="xref">NAME</a></pre></div> </article> </li>  <li> <article class="definition condition" id="CONDITION ORG.SHIRAKUMO.DEPOT:NO-SUCH-ENTRY"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONDITION</span> <h4 class="name"> <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ANO-SUCH-ENTRY">NO-SUCH-ENTRY</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/conditions.lisp#L21">Source</a>  </header> <div class="docstring"><pre>Error signalled if a requested entry does not exist.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-CONDITION" class="xref">DEPOT-CONDITION</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AID" class="xref">ID</a></pre></div> </article> </li>  <li> <article class="definition condition" id="CONDITION ORG.SHIRAKUMO.DEPOT:NOT-A-DEPOT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONDITION</span> <h4 class="name"> <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ANOT-A-DEPOT">NOT-A-DEPOT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/conditions.lisp#L61">Source</a>  </header> <div class="docstring"><pre>Error signalled when an object cannot be coerced to a depot.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-CONDITION" class="xref">DEPOT-CONDITION</a></pre></div> </article> </li>  <li> <article class="definition condition" id="CONDITION ORG.SHIRAKUMO.DEPOT:PERMISSION-DENIED"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONDITION</span> <h4 class="name"> <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3APERMISSION-DENIED">PERMISSION-DENIED</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/conditions.lisp#L29">Source</a>  </header> <div class="docstring"><pre>Error signalled if an action cannot be performed due to security constraints.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-CONDITION" class="xref">DEPOT-CONDITION</a></pre></div> </article> </li>  <li> <article class="definition condition" id="CONDITION ORG.SHIRAKUMO.DEPOT:READ-INVALIDATED"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONDITION</span> <h4 class="name"> <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3AREAD-INVALIDATED">READ-INVALIDATED</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/conditions.lisp#L57">Source</a>  </header> <div class="docstring"><pre>Error signalled when a read cannot be completed due to a conflict.
+
+This usually happens when a write has been committed between the time
+the transaction was opened and the current read was attempted.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION-ABORTED" class="xref">TRANSACTION-ABORTED</a></pre></div> </article> </li>  <li> <article class="definition condition" id="CONDITION ORG.SHIRAKUMO.DEPOT:TRANSACTION-ABORTED"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONDITION</span> <h4 class="name"> <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION-ABORTED">TRANSACTION-ABORTED</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/conditions.lisp#L49">Source</a>  </header> <div class="docstring"><pre>Error signalled when a transaction has been aborted and can't be used.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-CONDITION" class="xref">DEPOT-CONDITION</a></pre></div> </article> </li>  <li> <article class="definition condition" id="CONDITION ORG.SHIRAKUMO.DEPOT:UNSUPPORTED-OPERATION"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONDITION</span> <h4 class="name"> <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3AUNSUPPORTED-OPERATION">UNSUPPORTED-OPERATION</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/conditions.lisp#L45">Source</a>  </header> <div class="docstring"><pre>Error signalled when attempting an operation that is not supported by the depot implementation.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-CONDITION" class="xref">DEPOT-CONDITION</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOPERATION" class="xref">OPERATION</a></pre></div> </article> </li>  <li> <article class="definition condition" id="CONDITION ORG.SHIRAKUMO.DEPOT:WRITE-CONFLICT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONDITION</span> <h4 class="name"> <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3AWRITE-CONFLICT">WRITE-CONFLICT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/conditions.lisp#L53">Source</a>  </header> <div class="docstring"><pre>Error signalled when a write cannot be commited due to an existing conflict.
+
+This usually happens when a write has been committed between the time
+the transaction was opened and the current commit was attempted.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION-ABORTED" class="xref">TRANSACTION-ABORTED</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.DEPOT:ENTRY*"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY%2A">ENTRY*</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">DEPOT</li>    <li class="argument lambda-list-keyword">&amp;REST</li>    <li class="argument">IDS</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L78">Source</a>  </header> <div class="docstring"><pre>Resolves a chain of depot entries.
+
+This is as if calling ENTRY on each passed ID and replacing the depot
+with the result. The last depot is returned.
+
+This is useful for hierarchical depots.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.DEPOT:FROM-PATHNAME"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AFROM-PATHNAME">FROM-PATHNAME</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">PATHNAME</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">CREATE-DIRECTORIES</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/pathname.lisp#L51">Source</a>  </header> <div class="docstring"><pre>Returns an entry corresponding to the given pathname.
+
+This may signal an error of type NO-SUCH-ENTRY if the entry does not
+exist.
+
+If CREATE-DIRECTORIES is true, inexistent entries along the pathname's
+directories will be created.
+
+Returns a FILE or DIRECTORY.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATO-PATHNAME" class="xref">TO-PATHNAME</a>
+See <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AFILE" class="xref">FILE</a>
+See <a href="http://l1sp.org/cl/directory" class="xref">DIRECTORY</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.DEPOT:REGISTER-REALIZER"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREGISTER-REALIZER">REGISTER-REALIZER</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">REALIZER</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L43">Source</a>  </header> <div class="docstring"><pre>Register a realizer.
+
+You can pass a symbol naming the class of a realizer, a realizer
+subclass, or a realizer instance.
+
+See <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AREALIZER" class="xref">REALIZER</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREMOVE-REALIZER" class="xref">REMOVE-REALIZER</a>
+See <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEFINE-REALIZER" class="xref">DEFINE-REALIZER</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.DEPOT:REMOVE-REALIZER"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREMOVE-REALIZER">REMOVE-REALIZER</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">REALIZER</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L43">Source</a>  </header> <div class="docstring"><pre>Deregisters the realizer.
+
+You can pass a symbol naming the class of a realizer, a realizer
+subclass, or a realizer instance.
+
+See <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AREALIZER" class="xref">REALIZER</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREGISTER-REALIZER" class="xref">REGISTER-REALIZER</a>
+See <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEFINE-REALIZER" class="xref">DEFINE-REALIZER</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:ABORT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AABORT">ABORT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">TRANSACTION</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L41">Source</a>  </header> <div class="docstring"><pre>Aborts the transaction and rolls back any changes it may have made.
+
+The transaction is closed and any changes it may have made will be
+discarded and thus will not be visible to READ transactions (present
+or future), or other external processes interacting with the same
+entry.
+
+It is thus as if the transaction had never been opened in the first
+place.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOPEN-ENTRY" class="xref">OPEN-ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:ATTRIBUTE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AATTRIBUTE">ATTRIBUTE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">NAME</li>    <li class="argument">ENTRY</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L27">Source</a>  </header> <div class="docstring"><pre>Accesses a single attribute of the entry.
+
+Which attributes are available depend on the depot/entry used. The
+only attribute that is required is the :ID attribute.
+
+If the requested attribute does not exist, an error of type
+NO-SUCH-ATTRIBUTE is signalled.
+
+When setting this place, If the attribute cannot be changed, an error
+of type PERMISSION-DENIED may be signalled.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AATTRIBUTES" class="xref">ATTRIBUTES</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:(SETF ATTRIBUTE)"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3A%28SETF%20ATTRIBUTE%29">(SETF ATTRIBUTE)</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">VALUE</li>    <li class="argument">NAME</li>    <li class="argument">ENTRY</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L28">Source</a>  </header> <div class="docstring"><i>No documentation provided.</i></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:ATTRIBUTES"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AATTRIBUTES">ATTRIBUTES</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">ENTRY</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L25">Source</a>  </header> <div class="docstring"><pre>Accesses a plist of attributes of the entry.
+
+Which attributes are given depends on the depot/entry used. The only
+attribute that is required is the :ID attribute.
+
+When setting this place, only the attributes in the provided plist
+should be changed. Attributes are not removed using this
+method. Attributes other than the ones provided in the set plist may
+change as well, however. Some attributes may also not be changed. If
+an attribute cannot be changed, an error of type PERMISSION-DENIED may
+be signalled.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AATTRIBUTE" class="xref">ATTRIBUTE</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:(SETF ATTRIBUTES)"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3A%28SETF%20ATTRIBUTES%29">(SETF ATTRIBUTES)</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">ATTRIBUTES</li>    <li class="argument">ENTRY</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L26">Source</a>  </header> <div class="docstring"><i>No documentation provided.</i></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:COMMIT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ACOMMIT">COMMIT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">TRANSACTION</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">FLUSH</li>    <li class="argument">PASSWORD</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L40">Source</a>  </header> <div class="docstring"><pre>Commits the transaction and completes any pending operations.
+
+If the underlying entry was created new, but in the meantime the same
+entry was already created successfully, an error of type
+ENTRY-ALREADY-EXISTS may be signalled.
+
+If the underlying entry was deleted before the commit, an error of
+type ENTRY-DOES-NOT-EXIST may be signalled.
+
+If the underlying depot is full and cannot support the amount of data
+to be committed, an error of type DEPOT-FULL may be signalled.
+
+If the operating user lacks the permissions to complete the operation,
+an error  of type PERMISSION-DENIED may be signalled.
+
+If another write was committed after this transaction was created, but
+before this call to commit occurred, an error of type WRITE-CONFLICT
+may be signalled for :OUTPUT transactions, or READ-INVALIDATED for
+:INPUT transactions.
+
+If the commit completes successfully, the transaction is closed and
+the changes must become visible to new READ transactions, as well as
+to other external processes interacting with the same entry.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOPEN-ENTRY" class="xref">OPEN-ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:DELETE-ENTRY"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADELETE-ENTRY">DELETE-ENTRY</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">ENTRY</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L23">Source</a>  </header> <div class="docstring"><pre>Deletes the entry from its depot.
+
+If the depot does not support deleting an entry, an error of type
+UNSUPPORTED-OPERATION is signalled.
+
+If deleting the entry would violate security restrictions, an error of
+type PERMISSION-DENIED is signalled.
+
+If the entry does not exist (and thus cannot be deleted), an error of
+type ENTRY-DOES-NOT-EXIST is signalled.
+
+After an entry has been deleted, operating on it in any way leads to
+undefined behaviour.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:DEPOT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT">DEPOT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">ENTRY</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L30">Source</a>  </header> <div class="docstring"><pre>Returns the depot the entry is a part of.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:(SETF DEPOT)"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3A%28SETF%20DEPOT%29">(SETF DEPOT)</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">NEW-VALUE</li>    <li class="argument">OBJECT</li>  </ul>  </header> <div class="docstring"><i>No documentation provided.</i></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:ENSURE-DEPOT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENSURE-DEPOT">ENSURE-DEPOT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">THING</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L32">Source</a>  </header> <div class="docstring"><pre>Attempts to convert the given object to a depot.
+
+If this conversion should not be possible, an error of type
+NOT-A-DEPOT is signalled.
+
+If a DEPOT is passed, the depot is returned. If an ENTRY is passed,
+the entry's originating DEPOT is returned.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:ENTRY"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY">ENTRY</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">ID</li>    <li class="argument">DEPOT</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L20">Source</a>  </header> <div class="docstring"><pre>Returns the entry with the given ID from the depot.
+
+If no such entry exists in the depot, a NO-SUCH-ENTRY error is
+signalled.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:ENTRY-EXISTS-P"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY-EXISTS-P">ENTRY-EXISTS-P</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">ID</li>    <li class="argument">DEPOT</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L21">Source</a>  </header> <div class="docstring"><pre>Returns true if an entry with the given ID exists in the depot.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:ENTRY-MATCHES-P"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY-MATCHES-P">ENTRY-MATCHES-P</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">ENTRY</li>    <li class="argument">ATTRIBUTE</li>    <li class="argument">VALUE</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L24">Source</a>  </header> <div class="docstring"><pre>Returns true if the entry matches the specified attribute query.
+
+The available attributes are dependent on the entry and depot used.
+
+If the requested attribute does not exist, an error of type
+NO-SUCH-ATTRIBUTE may be signalled.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:ID"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AID">ID</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">ENTRY</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L29">Source</a>  </header> <div class="docstring"><pre>Returns the ID of the entry.
+
+The ID uniquely identifies the entry within the depot.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:INDEX"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AINDEX">INDEX</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">TRANSACTION</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L37">Source</a>  </header> <div class="docstring"><pre>Accesses the index at which in the backing storage read or write operations are performed.
+
+If the TRANSACTION was obtained through OPEN-ENTRY with the DIRECTION
+set to :OUTPUT, and the index is set to an index higher than the
+current index, the consequences are undefined.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:(SETF INDEX)"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3A%28SETF%20INDEX%29">(SETF INDEX)</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">INDEX</li>    <li class="argument">TRANSACTION</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L38">Source</a>  </header> <div class="docstring"><i>No documentation provided.</i></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:LIST-ENTRIES"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ALIST-ENTRIES">LIST-ENTRIES</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">DEPOT</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L17">Source</a>  </header> <div class="docstring"><pre>Returns a fresh list of all entries is the depot.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:MAKE-ENTRY"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AMAKE-ENTRY">MAKE-ENTRY</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">DEPOT</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">NAME</li>    <li class="argument">TYPE</li>    <li class="argument">ID</li>    <li class="argument">ENCRYPTION-METHOD</li>    <li class="argument">COMPRESSION-METHOD</li>    <li class="argument">LAST-MODIFIED</li>    <li class="argument">COMMENT</li>    <li class="argument lambda-list-keyword">&amp;ALLOW-OTHER-KEYS</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L22">Source</a>  </header> <div class="docstring"><pre>Creates a new entry in the depot.
+
+If the depot does not support creating an entry, an error of type
+UNSUPPORTED-OPERATION is signalled.
+
+If the depot is full and no further entries can be created due to
+storage constraints, an error of type DEPOT-FULL is signalled.
+
+If creating a new entry with the requested attributes would overwrite
+an existing entry, an error of type ENTRY-ALREADY-EXISTS is signalled.
+
+If creating the requested entry would violate security restrictions,
+an error of type PERMISSION-DENIED is signalled.
+
+The attributes that can be passed as keyword arguments are entirely
+dependent on the depot.
+
+Depending on the depot, calling MAKE-ENTRY may not persist the entry
+yet, and may only do so once the entry has been written to. As such,
+an entry created with this function may not immediately be returned by
+LIST-ENTRIES, QUERY-ENTRIES, and so forth.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a>
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3AUNSUPPORTED-OPERATION" class="xref">UNSUPPORTED-OPERATION</a>
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-FULL" class="xref">DEPOT-FULL</a>
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3AENTRY-ALREADY-EXISTS" class="xref">ENTRY-ALREADY-EXISTS</a>
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3APERMISSION-DENIED" class="xref">PERMISSION-DENIED</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:NAME"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ANAME">NAME</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONDITION</li>  </ul>  </header> <div class="docstring"><pre>Returns the name of the attribute.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ANO-SUCH-ATTRIBUTE" class="xref">NO-SUCH-ATTRIBUTE</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:OBJECT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOBJECT">OBJECT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONDITION</li>  </ul>  </header> <div class="docstring"><pre>Returns the object that the condition relates to.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT-CONDITION" class="xref">DEPOT-CONDITION</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:OPEN-ENTRY"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOPEN-ENTRY">OPEN-ENTRY</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">ENTRY</li>    <li class="argument">DIRECTION</li>    <li class="argument">ELEMENT-TYPE</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">START</li>    <li class="argument">INITIAL-SIZE</li>    <li class="argument">PASSWORD</li>    <li class="argument">ENCRYPTION-METHOD</li>    <li class="argument">COMPRESSION-METHOD</li>    <li class="argument">EXTERNAL-FORMAT</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L33">Source</a>  </header> <div class="docstring"><pre>Open the entry for a read or write transaction.
+
+Returns a live TRANSACTION instance.
+
+DIRECTION must be either :INPUT or :OUTPUT.
+ELEMENT-TYPE must be a valid type that the entry supports. The set of
+supported element types must in the very least include
+(UNSIGNED-BYTE 8) and CHARACTER.
+
+Depending on the entry type, additional arguments may be accepted that
+designate transaction properties.
+
+You MUST complete the transaction by use of COMMIT or ABORT at some
+point, as resources may be allocated in the back that could be
+exhausted if staying live for too long.
+
+A transaction object may be invalidated by an intermittent write
+operation to the same entry either through the same process, or
+through an external mechanism of some kind.
+
+Any changes made to an entry by either WRITE-TO, or by external
+processes, must not be visible until the transaction has been
+successfully COMMITTed.
+
+If a transaction is ABORTed, any changes made via WRITE-TO must be
+discarded as if they had never happened.
+
+See <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AWITH-OPEN" class="xref">WITH-OPEN</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ACOMMIT" class="xref">COMMIT</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AABORT" class="xref">ABORT</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AWRITE-TO" class="xref">WRITE-TO</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREAD-FROM" class="xref">READ-FROM</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:OPERATION"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOPERATION">OPERATION</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONDITION</li>  </ul>  </header> <div class="docstring"><pre>Returns the name of the operation that failed.
+
+See <a href="#CONDITION%20ORG.SHIRAKUMO.DEPOT%3AUNSUPPORTED-OPERATION" class="xref">UNSUPPORTED-OPERATION</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:QUERY-ENTRIES"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AQUERY-ENTRIES">QUERY-ENTRIES</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">DEPOT</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">ID</li>    <li class="argument">NAME</li>    <li class="argument">TYPE</li>    <li class="argument">HOST</li>    <li class="argument">VERSION</li>    <li class="argument lambda-list-keyword">&amp;ALLOW-OTHER-KEYS</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L18">Source</a>  </header> <div class="docstring"><pre>Returns a list of entries in the depot that match the queried attributes.
+
+The only required attribute that a depot must be able to query is ID.
+Other attributes are dependent on the depot and possibly entry being
+queried.
+
+The order of returned entries is not required to be stable.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:QUERY-ENTRY"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AQUERY-ENTRY">QUERY-ENTRY</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">DEPOT</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">DEVICE</li>    <li class="argument lambda-list-keyword">&amp;ALLOW-OTHER-KEYS</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L19">Source</a>  </header> <div class="docstring"><pre>Returns the matching entry in the depot.
+
+If no matching entry is found, NIL is returned. If multiple entries
+match, any one of them may be returned.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AQUERY-ENTRIES" class="xref">QUERY-ENTRIES</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEPOT" class="xref">DEPOT</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:READ-FROM"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREAD-FROM">READ-FROM</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">TRANSACTION</li>    <li class="argument">SEQUENCE</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">START</li>    <li class="argument">END</li>    <li class="argument">BLOCK-SIZE</li>    <li class="argument lambda-list-keyword">&amp;ALLOW-OTHER-KEYS</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L35">Source</a>  </header> <div class="docstring"><pre>Read a sequence from a transaction.
+
+TRANSACTION must be an object obtained through OPEN-ENTRY with the
+DIRECTION set to :INPUT, and may not have been aborted, committed, or
+invalidated.
+
+SEQUENCE must be a lisp sequence type. START and END may be indices
+into this sequence designating a subsequence to write.
+
+The sequence is filled starting from the current INDEX of the
+transaction until either the end of the designated sequence is
+reached, or the end of the transaction is reached.
+
+Returns the index of the last element in the sequence that was
+modified.
+
+If another write was committed after the transaction was created, but
+before this call an error of type READ-INVALIDATED may be signalled.
+
+You may also call this on an ENTRY directly, in which case it will
+construct a transaction, read the sequence, and immediately attempt
+to COMMIT. In this case you may also pass either 'BYTE or 'CHARACTER
+as arguments to the second argument, in which case a vector will be
+constructed for you and returned instead of the last modified
+index. The vector will have element type of (UNSIGNED-BYTE 8) or
+CHARACTER, respectively.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOPEN-ENTRY" class="xref">OPEN-ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:REALIZE-ENTRY"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREALIZE-ENTRY">REALIZE-ENTRY</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">ENTRY</li>    <li class="argument">REALIZER</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L31">Source</a>  </header> <div class="docstring"><pre>Attempts to turn the entry into another entry or depot of another backend.
+
+This allows you to access the contents of a depot that's encoded
+within another depot.
+
+You may either pass a realizer instance, or T. If T is passed, each of
+the known realizers is tried in turn until one that passes is found,
+whose result is returned. If no realizer accepts the entry, NIL is
+returned. If a realizer instance is passed directly and it fails at
+realizing the entry, an error is signalled.
+
+When successful the result may be an ENTRY or a DEPOT.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a>
+See <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AREALIZER" class="xref">REALIZER</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:SIZE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ASIZE">SIZE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">TRANSACTION</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L36">Source</a>  </header> <div class="docstring"><pre>Returns the size (in elements) of the backing storage the transaction represents.
+
+If the TRANSACTION was not obtained through OPEN-ENTRY with the
+DIRECTION set to :INPUT, the consequences of this function are
+implementation defined.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:TARGET"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATARGET">TARGET</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">OBJECT</li>  </ul>  </header> <div class="docstring"><pre>Returns the entry that the transaction is targeting.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AENTRY" class="xref">ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:(SETF TARGET)"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3A%28SETF%20TARGET%29">(SETF TARGET)</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">NEW-VALUE</li>    <li class="argument">OBJECT</li>  </ul>  </header> <div class="docstring"><i>No documentation provided.</i></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:TO-PATHNAME"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATO-PATHNAME">TO-PATHNAME</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">ENTRY</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/pathname.lisp#L21">Source</a>  </header> <div class="docstring"><pre>Returns a pathname that this entry represents.
+
+This operation may also be used for entries that do not come from a
+file system depot, but the success of the operation is not
+guaranteed, as it is subject to implementation pathname constraints
+that may not apply to the depot or entry in question.
+
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AFROM-PATHNAME" class="xref">FROM-PATHNAME</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:TO-STREAM"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATO-STREAM">TO-STREAM</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">TRANSACTION</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L39">Source</a>  </header> <div class="docstring"><pre>Turns the transaction object into a STREAM object that can be passed to other agnostic libraries.
+
+Note that many operations on the stream can be significantly more
+expensive than if done through transactions' READ-FROM/WRITE-TO
+functions, and some stream operations may not be entirely supported.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:TRANSACTION"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION">TRANSACTION</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">OBJECT</li>  </ul>  </header> <div class="docstring"><i>No documentation provided.</i></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.DEPOT:WRITE-TO"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AWRITE-TO">WRITE-TO</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">TRANSACTION</li>    <li class="argument">SEQUENCE</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">START</li>    <li class="argument">END</li>    <li class="argument">BLOCK-SIZE</li>    <li class="argument lambda-list-keyword">&amp;ALLOW-OTHER-KEYS</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L34">Source</a>  </header> <div class="docstring"><pre>Write a sequence to a transaction.
+
+TRANSACTION must be an object obtained through OPEN-ENTRY with the
+DIRECTION set to :OUTPUT, and may not have been aborted, committed, or
+invalidated.
+
+SEQUENCE must be a lisp sequence type. START and END may be indices
+into this sequence designating a subsequence to write.
+
+If another write was committed after the transaction was created, but
+before this call an error of type WRITE-CONFLICT may be signalled.
+
+You may also call this on an ENTRY directly, in which case it will
+construct a transaction, write the sequence, and immediately attempt
+to COMMIT it.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOPEN-ENTRY" class="xref">OPEN-ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a></pre></div> </article> </li>  <li> <article class="definition macro callable" id="MACRO-FUNCTION ORG.SHIRAKUMO.DEPOT:DEFINE-REALIZER"> <header> <span class="visibility">EXTERNAL</span> <span class="type">MACRO</span> <h4 class="name"> <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ADEFINE-REALIZER">DEFINE-REALIZER</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">NAME</li>    <li class="argument lambda-list-keyword">&amp;BODY</li>    <li class="argument">DISPATCHERS</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L57">Source</a>  </header> <div class="docstring"><pre>Define a new realizer.
+
+This does the following:
+
+If no class named NAME exists yet, it is defined as a subclass of
+REALIZER. For each of the DISPATCHERS in the body it defines a method
+on REALIZE-ENTRY, with the structure of each dispatcher being as
+follows:
+
+  ((var class) . body)
+
+CLASS naming a class that the entry must be a subclass of, and VAR
+being the variable to which the entry is bound. BODY being the forms
+that are executed when a matching entry is being realised.
+
+See <a href="#CLASS%20ORG.SHIRAKUMO.DEPOT%3AREALIZER" class="xref">REALIZER</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREGISTER-REALIZER" class="xref">REGISTER-REALIZER</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREMOVE-REALIZER" class="xref">REMOVE-REALIZER</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AREALIZE-ENTRY" class="xref">REALIZE-ENTRY</a></pre></div> </article> </li>  <li> <article class="definition macro callable" id="MACRO-FUNCTION ORG.SHIRAKUMO.DEPOT:WITH-OPEN"> <header> <span class="visibility">EXTERNAL</span> <span class="type">MACRO</span> <h4 class="name"> <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AWITH-OPEN">WITH-OPEN</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <ul class="arguments"> <li class="argument">TRANSACTION</li>  <li class="argument">ENTRY</li>  <li class="argument">DIRECTION</li>  <li class="argument">ELEMENT-TYPE</li>  <li class="argument lambda-list-keyword">&amp;REST</li>  <li class="argument">ARGS</li> </ul>    <li class="argument lambda-list-keyword">&amp;BODY</li>    <li class="argument">BODY</li>  </ul>  <a class="source-link" href="https://github.com/shinmera/depot/blob/master/protocol.lisp#L83">Source</a>  </header> <div class="docstring"><pre>Macro to conveniently handle a transaction.
+
+Will call OPEN-ENTRY on the passed arguments, bind the resulting
+transaction to TRANSACTION, and evaluate the BODY. During execution of
+the BODY, an ABORT restart is established. This restart will invoke
+ABORT on the transaction object and exit the body.
+
+If the body is executed to completion, the transaction is
+COMMITTed. If the body should exit abnormally, the transaction is
+ABORTed.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AOPEN-ENTRY" class="xref">OPEN-ENTRY</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3AABORT" class="xref">ABORT</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ACOMMIT" class="xref">COMMIT</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.DEPOT%3ATRANSACTION" class="xref">TRANSACTION</a></pre></div> </article> </li> </ul> </article> </li> </ul> </section>  </article> <script>window.addEventListener("DOMContentLoaded", function(){
+    var unmarkElement = function(el){
+        if(el.tagName === "mark" || el.tagName === "MARK"){
+            [].forEach.call(el.childNodes, function(child){
+                el.parentNode.insertBefore(child, el);
+            });
+            el.parentNode.removeChild(el);
+        }else if(el.parentNode.tagName === "mark"){
+            return unmarkElement(el.parentNode);
+        }
+        return null;
+    }
+
+    var unmarkAll = function(root){
+        root = root || document;
+        [].forEach.call(root.querySelectorAll("mark"), unmarkElement);
+    }
+    
+    var markElement = function(el){
+        if(el.parentNode.tagName === "mark" || el.parentNode.tagName === "MARK"){
+            return el.parentNode;
+        } else {
+            unmarkAll();
+            var marked = document.createElement("mark");
+            el.parentNode.insertBefore(marked, el);
+            marked.appendChild(el);
+            return marked;
+        }
+    }
+
+    var markFragmented = function(){
+        if(window.location.hash){
+            var el = document.getElementById(decodeURIComponent(window.location.hash.substr(1)));
+            if(el) markElement(el);
+        }
+    }
+
+    var registerXrefLink = function(link){
+        var el = document.getElementById(decodeURIComponent(link.getAttribute("href").substr(1)));
+        if(el){
+            link.addEventListener("click", function(){
+                markElement(el);
+            });
+        }
+    }
+
+    var registerXrefLinks = function(root){
+        root = root || document;
+        [].forEach.call(root.querySelectorAll("a.xref"), registerXrefLink);
+    }
+
+    markFragmented();
+    registerXrefLinks();
+}); </script> </body> </html> 
