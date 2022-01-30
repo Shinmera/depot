@@ -78,7 +78,9 @@ There's a few more functions to query entries within a depot more efficiently, a
 The following storage backends are supported:
 
 - pathname
-- zip (via depot-zip)
+- zip (depot-zip)
+- in-memory (depot-in-memory)
+- virtual (depot-virtual)
 
 ## Writing New Backends
 If you have a new storage backend that you would like to support with the depot protocol, all you need to do is create subclasses of ``depot``, ``entry``, and ``transaction``, and implement methods for the generic functions mentioned in their documentation sections.
