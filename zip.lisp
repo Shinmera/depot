@@ -51,7 +51,7 @@
 
 (flet ((convert-entries (file)
          (loop for entry across (zippy:entries file)
-               do (if (find :directory (zippy:attributes entry))
+               do (if (getf (first (zippy:attributes entry)) :directory)
                       (change-class entry 'zip-directory)
                       (change-class entry 'zip-file)))
          file))
