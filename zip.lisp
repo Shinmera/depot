@@ -111,6 +111,7 @@
            :compression-method (zippy:compression-method entry)
            :last-modified (zippy:last-modified entry)
            :comment (zippy:comment entry)
+           :id (depot:id entry)
            file-attrs)))
 
 (defmethod (setf depot:attributes) (attributes (entry zip-entry))
@@ -129,8 +130,19 @@
 (defmethod depot:list-entries ((depot zip-directory))
   (loop with prefix = (zippy:file-name depot)
         for entry across (zippy:entries (zippy:zip-file depot))
-        when (starts-with prefix (zippy:file-name entry))
+        when (and (not (eq entry depot))
+                  (starts-with prefix (zippy:file-name entry))
+                  (not (find #\/ (depot:id entry) :start (length prefix))))
         collect entry))
+
+(defmethod depot:entry (id (depot zip-directory))
+  (loop for prefix = (format NIL "~a~a" (zippy:file-name depot) id)
+        for entry across (zippy:entries (zippy:zip-file depot))
+        do (when (string= prefix (zippy:file-name entry))
+             (return entry))))
+
+(defmethod depot:entry-matches-p ((directory zip-directory) (attribute (eql :id)) value)
+  (string= value (depot:id directory)))
 
 (defmethod depot:make-entry ((depot zip-directory) &rest args)
   (let ((name (or (getf args :id) (format NIL "~a~@[.~a~]" (getf args :name) (getf args :type)))))
