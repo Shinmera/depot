@@ -49,7 +49,9 @@
   ((streams :initarg :streams :initform () :reader streams)))
 
 (defmethod depot:commit ((depot zip-file-archive) &key password)
-  (zippy:compress-zip depot (depot:to-pathname depot) :password password :if-exists :supersede))
+  (depot:with-open (tx depot :output '(unsigned-byte 8))
+    (zippy:compress-zip depot (depot:to-stream tx) :password password)
+    depot))
 
 (flet ((convert-entries (file)
          (loop for entry across (zippy:entries file)
