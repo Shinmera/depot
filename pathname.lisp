@@ -29,6 +29,13 @@
     (:unspecific NIL)
     (T comp)))
 
+(defun directory-p (path)
+  (let ((true (truename path)))
+    (when (if (stringp true)
+              (char= #+windows #\\ #-windows #\/ (char true (1- (length true))))
+              (not (or (pathname-name true) (pathname-type true))))
+      true)))
+
 (defmethod to-pathname ((entry entry))
   (let* ((name (id entry))
          (dotp (position #\. name :from-end T))
@@ -91,6 +98,18 @@
 
 (defmethod attribute ((name (eql :author)) (entry directory))
   (file-author (to-pathname entry)))
+
+(defmethod entry (id (depot directory))
+  (let ((path (merge-pathnames id (to-pathname depot))))
+    (or (when (probe-file path)
+          (let ((dirpath (directory-p path)))
+            (if dirpath
+                (make-instance 'directory :depot depot :pathname dirpath)
+                (make-instance 'file :depot depot :pathname path))))
+        (error 'no-such-entry :object depot :id id))))
+
+(defmethod entry-exists-p (id (depot directory))
+  (probe-file (merge-pathnames id (to-pathname depot))))
 
 (defmethod list-entries ((depot directory))
   (let* ((pathname (to-pathname depot))
@@ -217,6 +236,7 @@
                                           :timestamp (file-write-date pathname))))
 
 (defmethod commit ((transaction file-read-transaction) &key)
+  (call-next-method)
   (let ((pathname (to-pathname (target transaction))))
     (cond ((not (probe-file pathname))
            (cerror "Ignore and commit anyway." 'entry-does-not-exist :object (target transaction)))
