@@ -82,7 +82,7 @@
 
 (defun entry* (depot &rest ids)
   (loop for id in ids
-        do (setf depot (entry id depot)))
+        do (setf depot (ensure-entry id depot)))
   depot)
 
 (defmacro with-open ((transaction entry direction element-type &rest args) &body body)
