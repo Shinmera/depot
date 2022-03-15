@@ -143,14 +143,14 @@
    (compression-method :initarg :compression-method :accessor compression-method)
    (password :initarg :password :accessor password)))
 
-(defmethod depot:write-to ((transaction write-transaction) sequence &key start end)
+(defmethod depot:write-to ((transaction write-transaction) (sequence sequence) &key start end)
   (let ((buffer (first (buffers transaction)))
         (index (index transaction))
         (start (or start 0))
         (end (or end (length sequence))))
     (loop
        (let* ((avail (- (length buffer) index))
-              (to-copy (max 0 (min avail (- start end)))))
+              (to-copy (max 0 (min avail (- end start)))))
          (replace buffer sequence :start1 index :start2 start :end2 end)
          (incf index to-copy)
          (incf start to-copy)
