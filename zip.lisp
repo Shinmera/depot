@@ -58,11 +58,16 @@
          file))
   (depot:define-realizer zip
     ((file depot:file)
-     (multiple-value-bind (zip-file streams) (zippy:open-zip-file (depot:to-pathname file))
-       (convert-entries (change-class zip-file 'zip-file-archive
-                                      :streams streams
-                                      :pathname (depot:to-pathname file)
-                                      :depot (depot:depot file)))))
+     (cond ((probe-file (depot:to-pathname file))
+            (multiple-value-bind (zip-file streams) (zippy:open-zip-file (depot:to-pathname file))
+              (convert-entries (change-class zip-file 'zip-file-archive
+                                             :streams streams
+                                             :pathname (depot:to-pathname file)
+                                             :depot (depot:depot file)))))
+           ((string= "zip" (depot:attribute :type file))
+            (make-instance 'zip-file-archive :pathname (depot:to-pathname file)
+                                             :entries (make-array 0 :adjustable T :fill-pointer T)
+                                             :depot (depot:depot file)))))
     ((entry depot:entry)
      ;; KLUDGE: we can't use the streams interface because zippy requires file-streams (and file-length)
      ;;         which gray streams cannot emulate. :(
