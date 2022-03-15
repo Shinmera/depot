@@ -226,7 +226,7 @@
       (block NIL
         (labels ((handle (buffer start end)
                    (let* ((avail (- end start))
-                          (to-copy (max 0 (min avail (- target-end target-start)))))
+                          (to-copy (max 0 (min avail (- target-end (+ target-start index))))))
                      (replace sequence buffer :start1 (+ index target-start) :end1 target-end :start2 start :end2 end)
                      (incf index to-copy)
                      (when (<= target-end index)
