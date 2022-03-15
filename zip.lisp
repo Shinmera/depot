@@ -53,6 +53,15 @@
     (zippy:compress-zip depot (depot:to-stream tx) :password password)
     depot))
 
+(defmethod close ((depot zip-file-archive) &key abort)
+  (unless abort
+    (depot:commit depot))
+  (when (zippy:disks depot)
+    (loop for disk across (zippy:disks depot)
+          do (when (streamp disk)
+               (close disk :abort abort)))
+    (setf (zippy:disks depot) NIL)))
+
 (flet ((convert-entries (file)
          (loop for entry across (zippy:entries file)
                do (if (getf (first (zippy:attributes entry)) :directory)
