@@ -130,6 +130,14 @@
 (defmethod commit ((depot depot) &key))
 (defmethod commit ((entry entry) &key))
 
+(defmethod cl:close ((depot depot) &key abort)
+  (unless abort
+    (commit depot)))
+
+(defmethod cl:close ((entry entry) &key abort)
+  (unless abort
+    (commit entry)))
+
 (defmethod entry (id (depot depot))
   (or (query-entry depot :id id)
       (error 'no-such-entry :object depot :id id)))
