@@ -35,6 +35,7 @@
           collect entry)))
 
 (defmethod depot:make-entry ((depot zip-archive) &key name type id encryption-method compression-method (last-modified (get-universal-time)) comment)
+  ;; FIXME: check for duplicates and error.
   (let ((entry (make-instance 'zip-file :zip-file depot
                                         :encryption-method encryption-method
                                         :compression-method compression-method
@@ -182,6 +183,19 @@
 (defmethod depot:abort ((transaction write-transaction) &key)
   (setf (buffers transaction) ()))
 
+(defmethod depot:open-entry ((entry zip-entry) (direction (eql :output)) (element-type (eql 'character)) &key password (external-format :utf-8))
+  (let ((sub (depot:open-entry entry direction '(unsigned-byte 8) :password password)))
+    (change-class sub 'string-write-transaction :external-format external-format)))
+
+(defclass string-write-transaction (write-transaction)
+  ((external-format :initarg :external-format :initform :utf-8 :accessor external-format)))
+
+(defmethod depot:element-type ((transaction string-write-transaction)) 'character)
+
+(defmethod depot:write-to ((transaction string-write-transaction) (sequence sequence) &key start end)
+  ;; KLUDGE: this sucks. We keep allocating new vectors here.
+  (call-next-method transaction (babel:string-to-octets sequence :start (or start 0) :end (or end (length sequence)) :encoding (external-format transaction))))
+
 (defmethod depot:open-entry ((entry zip-entry) (direction (eql :input)) element-type &key password)
   (unless (subtypep element-type '(unsigned-byte 8))
     (error "Only (unsigned-byte 8) is supported as element-type."))
@@ -253,3 +267,22 @@
            decryption-state)))
       (incf (slot-value transaction 'index) index))
     (+ target-start index)))
+
+(defmethod depot:open-entry ((entry zip-entry) (direction (eql :input)) (element-type (eql 'character)) &key password (external-format :utf-8))
+  (let ((sub (depot:open-entry entry direction '(unsigned-byte 8) :password password)))
+    (change-class sub 'string-read-transaction :external-format external-format)))
+
+(defclass string-read-transaction (read-transaction)
+  ((external-format :initarg :external-format :initform :utf-8 :accessor external-format)))
+
+(defmethod depot:element-type ((transaction string-read-transaction)) 'character)
+
+(defmethod depot:read-from ((transaction string-write-transaction) (sequence sequence) &key start end)
+  ;; KLUDGE: oh god this makes me nauseous.
+  (let* ((start (or start 0))
+         (end (or end (length sequence)))
+         (buf (make-array (- end start) :element-type '(unsigned-byte 8))))
+    (call-next-method transaction buf)
+    (let ((string (babel:octets-to-string sequence :encoding (external-format transaction))))
+      (replace sequence string :start1 start :end1 end)
+      (min end (+ start (length string))))))
