@@ -35,13 +35,14 @@
           collect entry)))
 
 (defmethod depot:make-entry ((depot zip-archive) &key name type id encryption-method compression-method (last-modified (get-universal-time)) comment)
-  (vector-push-extend (make-instance 'zip-file :zip-file depot
-                                               :encryption-method encryption-method
-                                               :compression-method compression-method
-                                               :last-modified last-modified
-                                               :comment comment
-                                               :file-name (or id (format NIL "~a~@[.~a~]" name type)))
-                      (zippy:entries depot)))
+  (let ((entry (make-instance 'zip-file :zip-file depot
+                                        :encryption-method encryption-method
+                                        :compression-method compression-method
+                                        :last-modified last-modified
+                                        :comment comment
+                                        :file-name (or id (format NIL "~a~@[.~a~]" name type)))))
+    (vector-push-extend entry (zippy:entries depot))
+    entry))
 
 (defclass zip-file-archive (zip-archive depot:file)
   ((streams :initarg :streams :initform () :reader streams)))
