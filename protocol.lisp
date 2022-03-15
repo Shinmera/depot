@@ -127,6 +127,9 @@
 (defmethod open-entry ((entry entry) direction element-type &key)
   (error 'unsupported-operation :operation 'open-entry :object entry))
 
+(defmethod commit ((depot depot) &key))
+(defmethod commit ((entry entry) &key))
+
 (defmethod entry (id (depot depot))
   (or (query-entry depot :id id)
       (error 'no-such-entry :object depot :id id)))
