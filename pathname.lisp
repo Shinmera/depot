@@ -68,6 +68,9 @@
                               :type (pathname-type pathname)))
         depot)))
 
+(defmethod ensure-depot ((pathname pathname))
+  (ensure-depot (from-pathname pathname)))
+
 (defclass directory (depot entry)
   ((depot :initarg :depot :reader depot)
    (pathname :initarg :pathname :reader to-pathname)))
