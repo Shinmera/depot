@@ -125,11 +125,12 @@
     (error "Only (unsigned-byte 8) is supported as element-type."))
   (make-instance 'write-transaction
                  :entry entry
+                 :element-type element-type
                  :encryption-method encryption-method
                  :compression-method compression-method
                  :password password))
 
-(defclass write-transaction (depot:transaction)
+(defclass write-transaction (depot:output-transaction)
   ((index :initform 0 :accessor index)
    (buffers :initform (list (make-array 4096 :element-type '(unsigned-byte 8))) :accessor buffers)
    (encryption-method :initarg :encryption-method :accessor encryption-method)
@@ -189,6 +190,7 @@
     (make-instance 'read-transaction
                    :entry entry
                    :input input
+                   :element-type element-type
                    :decryption-state (apply #'zippy:make-decryption-state (first (zippy:encryption-method entry)) input password (rest (zippy:encryption-method entry)))
                    :decompression-state (zippy:make-decompression-state (zippy:compression-method entry)))))
 
@@ -196,7 +198,7 @@
   (babel:octets-to-string
    (apply #'depot:read-from entry 'byte args)))
 
-(defclass read-transaction (depot:transaction)
+(defclass read-transaction (depot:input-transaction)
   ((input :initarg :input :reader input)
    (index :initform 0 :accessor index :accessor depot:index)
    (decryption-state :initarg :decryption-state :reader decryption-state)
@@ -214,7 +216,7 @@
 (defmethod depot:commit ((transaction read-transaction) &key))
 (defmethod depot:abort ((transaction read-transaction) &key))
 
-(defmethod depot:read-from ((transaction read-transaction) sequence &key start end)
+(defmethod depot:read-from ((transaction read-transaction) (sequence sequence) &key start end)
   (let ((decompression-state (decompression-state transaction))
         (decryption-state (decryption-state transaction))
         (target-start (or start 0))

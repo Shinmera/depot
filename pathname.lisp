@@ -174,7 +174,7 @@
 (defclass file-transaction (stream-transaction)
   ((timestamp :initarg :timestamp :reader timestamp)))
 
-(defclass file-write-transaction (file-transaction)
+(defclass file-write-transaction (file-transaction output-transaction)
   ())
 
 (defmethod open-entry ((file file) (direction (eql :output)) element-type &key (external-format :default))
@@ -182,6 +182,7 @@
          (tmp (make-pathname :name (format NIL "~a-tmp~d~d" (pathname-name pathname) (get-universal-time) (random 100)) :defaults pathname)))
     (make-instance 'file-write-transaction :stream (open tmp :direction direction :element-type element-type :external-format external-format)
                                            :entry file
+                                           :element-type element-type
                                            :timestamp (when (probe-file pathname) (file-write-date pathname)))))
 
 ;; FIXME: testing for changes via timestamp only is error prone.
@@ -205,13 +206,14 @@
   (call-next-method)
   (ignore-errors (delete-file (to-stream transaction))))
 
-(defclass file-read-transaction (file-transaction)
+(defclass file-read-transaction (file-transaction input-transaction)
   ())
 
 (defmethod open-entry ((file file) (direction (eql :input)) element-type &key (external-format :default))
   (let ((pathname (to-pathname file)))
     (make-instance 'file-read-transaction :stream (open pathname :direction direction :element-type element-type :external-format external-format)
                                           :entry file
+                                          :element-type element-type
                                           :timestamp (file-write-date pathname))))
 
 (defmethod commit ((transaction file-read-transaction) &key)

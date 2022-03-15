@@ -12,7 +12,10 @@
 (defclass depot () ())
 (defclass entry () ())
 (defclass transaction ()
-  ((entry :initarg :entry :reader target)))
+  ((entry :initarg :entry :reader target)
+   (element-type :initarg :element-type :reader element-type)))
+(defclass input-transaction (transaction) ())
+(defclass output-transaction (transaction) ())
 
 (defgeneric list-entries (depot))
 (defgeneric query-entries (depot &key))
@@ -36,6 +39,7 @@
 (defgeneric read-from (transaction sequence &key start end))
 (defgeneric size (transaction))
 (defgeneric index (transaction))
+(defgeneric element-type (transaction))
 (defgeneric (setf index) (index transaction))
 (defgeneric to-stream (transaction))
 (defgeneric commit (transaction &key))
@@ -191,7 +195,9 @@
     (apply #'read-from tx target args)))
 
 (defmethod read-from ((tx transaction) (target (eql 'byte)) &key start end)
-  (when start (setf (index tx) start))
+  (if start
+      (setf (index tx) start)
+      (setf start 0))
   (unless end (setf end (size tx)))
   (let ((array (make-array (- end start) :element-type '(unsigned-byte 8))))
     (read-from tx array)
@@ -238,11 +244,30 @@
 ;;;; TODO: This interface is /slow/ because there is no internal buffering going on at all.
 ;;;;       A faster version would properly buffer and keep indices.
 (defclass transaction-stream (trivial-gray-streams:fundamental-stream)
-  ((transaction :initarg :transaction :reader transaction)
-   (unread :initform NIL :accessor unread)))
+  ((transaction :initarg :transaction :reader transaction)))
+(defclass transaction-input-stream (transaction-stream trivial-gray-streams:fundamental-input-stream)
+  ((unread :initform NIL :accessor unread)))
+(defclass transaction-output-stream (transaction-stream trivial-gray-streams:fundamental-output-stream) ())
+(defclass transaction-binary-input-stream (transaction-input-stream trivial-gray-streams:fundamental-binary-input-stream) ())
+(defclass transaction-binary-output-stream (transaction-output-stream trivial-gray-streams:fundamental-binary-output-stream) ())
+(defclass transaction-character-input-stream (transaction-input-stream trivial-gray-streams:fundamental-character-input-stream) ())
+(defclass transaction-character-output-stream (transaction-output-stream trivial-gray-streams:fundamental-character-output-stream) ())
 
-(defmethod to-stream ((transaction transaction))
-  (make-instance 'transaction-stream :transaction transaction))
+(defmethod to-stream ((transaction output-transaction))
+  (cond ((subtypep (element-type transaction) '(unsigned-byte 8))
+         (make-instance 'transaction-binary-output-stream :transaction transaction))
+        ((subtypep (element-type transaction) 'character)
+         (make-instance 'transaction-character-output-stream :transaction transaction))
+        (T
+         (make-instance 'transaction-output-stream :transaction transaction))))
+
+(defmethod to-stream ((transaction input-transaction))
+  (cond ((subtypep (element-type transaction) '(unsigned-byte 8))
+         (make-instance 'transaction-binary-input-stream :transaction transaction))
+        ((subtypep (element-type transaction) 'character)
+         (make-instance 'transaction-character-input-stream :transaction transaction))
+        (T
+         (make-instance 'transaction-input-stream :transaction transaction))))
 
 (defmethod cl:close ((stream transaction-stream) &key abort)
   (if abort

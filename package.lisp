@@ -34,6 +34,9 @@
    #:transaction
    #:target
    #:entry
+   #:element-type
+   #:input-transaction
+   #:output-transaction
    #:list-entries
    #:query-entries
    #:query-entry
