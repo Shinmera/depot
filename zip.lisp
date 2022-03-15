@@ -31,7 +31,7 @@
 (defmethod depot:query-entries ((depot zip-archive) &key id name type &allow-other-keys)
   (let ((name (or id (format NIL "~a~@[.~a~]" name type))))
     (loop for entry across (zippy:entries depot)
-          when (string= (zippy:file-name entry) name)
+          when (string= (depot:id entry) name)
           collect entry)))
 
 (defmethod depot:make-entry ((depot zip-archive) &key name type id encryption-method compression-method (last-modified (get-universal-time)) comment)
@@ -121,17 +121,20 @@
         (delete entry (zippy:entries (zippy:zip-file entry)))))
 
 (defclass zip-directory (zip-entry depot:depot)
-  ())
+  ((name :accessor depot:id)))
+
+(defmethod shared-initialize :after ((directory zip-directory) slots &key)
+  (setf (depot:id directory) (string-right-trim "/\\" (zippy:file-name directory))))
 
 (defmethod depot:list-entries ((depot zip-directory))
-  (loop with prefix = (format NIL "~a/" (zippy:file-name depot))
+  (loop with prefix = (zippy:file-name depot)
         for entry across (zippy:entries (zippy:zip-file depot))
         when (starts-with prefix (zippy:file-name entry))
         collect entry))
 
 (defmethod depot:make-entry ((depot zip-directory) &rest args)
   (let ((name (or (getf args :id) (format NIL "~a~@[.~a~]" (getf args :name) (getf args :type)))))
-    (apply #'depot:make-entry (depot:depot depot) :id (format NIL "~a/~a" (zippy:file-name depot) name) args)))
+    (apply #'depot:make-entry (depot:depot depot) :id (format NIL "~a~a" (zippy:file-name depot) name) args)))
 
 (defclass zip-file (zip-entry depot:entry)
   ())
