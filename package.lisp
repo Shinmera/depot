@@ -61,6 +61,7 @@
    #:entry*
    #:with-open
    #:ensure-depot
+   #:ensure-entry
    #:stream-transaction
    #:transaction-stream)
   ;; pathname.lisp

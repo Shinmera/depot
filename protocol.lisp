@@ -30,6 +30,7 @@
 (defgeneric depot (entry))
 (defgeneric realize-entry (entry realizer))
 (defgeneric ensure-depot (thing))
+(defgeneric ensure-entry (id depot &rest attributes))
 (defgeneric open-entry (entry direction element-type &key))
 (defgeneric write-to (transaction sequence &key start end))
 (defgeneric read-from (transaction sequence &key start end))
@@ -101,6 +102,11 @@
 (defmethod ensure-depot ((entry entry))
   (or (realize-entry entry T)
       (error 'not-a-depot :object entry)))
+
+(defmethod ensure-entry (id (depot depot) &rest attributes)
+  (if (entry-exists-p id depot)
+      (entry id depot)
+      (apply #'make-entry depot :id id attributes)))
 
 ;;;; Defaulting methods
 (defmethod list-entries ((depot depot))
