@@ -46,9 +46,11 @@
 
 (defun convert-entries (file)
   (loop for entry across (zippy:entries file)
-        do (if (getf (first (zippy:attributes entry)) :directory)
-               (change-class entry 'zip-directory)
-               (change-class entry 'zip-file)))
+        do (when (getf (first (zippy:attributes entry)) :directory)
+             (change-class entry 'zip-directory)))
+  (loop for entry across (zippy:entries file)
+        do (unless (getf (first (zippy:attributes entry)) :directory)
+             (change-class entry 'zip-file)))
   file)
 
 (defclass zip-archive (depot:depot zippy:zip-file)
@@ -58,7 +60,9 @@
 (defmethod depot:make-entry ((depot zip-archive) &key name type id encryption-method compression-method (last-modified (get-universal-time)) comment)
   ;; FIXME: check for duplicates and error.
   (let* ((file-name (or id (format NIL "~a~@[.~a~]" name type)))
-         (entry (make-instance 'zip-file
+         (entry (make-instance (if (char= #\/ (char file-name (1- (length file-name))))
+                                   'zip-directory
+                                   'zip-file)
                                :zip-file depot
                                :encryption-method encryption-method
                                :compression-method compression-method
