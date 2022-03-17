@@ -138,8 +138,9 @@
 (defmethod depot:entry (id (depot zip-directory))
   (loop for prefix = (format NIL "~a~a" (zippy:file-name depot) id)
         for entry across (zippy:entries (zippy:zip-file depot))
-        do (when (string= prefix (zippy:file-name entry))
-             (return entry))))
+        do (when (string= prefix (depot:id entry))
+             (return entry))
+        finally (error 'depot:no-such-entry :object depot :id id)))
 
 (defmethod depot:entry-matches-p ((directory zip-directory) (attribute (eql :id)) value)
   (string= value (depot:id directory)))
