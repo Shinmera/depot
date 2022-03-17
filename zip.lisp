@@ -22,26 +22,49 @@
   (and (<= (length prefix) (length string))
        (string= prefix string :end2 (length prefix))))
 
+(defun find-parent (entry)
+  (let* ((name (zippy:file-name entry))
+         (end (if (char= #\/ (char name (1- (length name))))
+                  (1- (length name))
+                  (length name)))
+         (slashpos (position #\/ (zippy:file-name entry) :from-end T :end end)))
+    (if slashpos
+        (let ((parent-name (subseq name 0 (1+ slashpos))))
+          (or (find parent-name (zippy:entries (zippy:zip-file entry))
+                    :key #'zippy:file-name :test #'string=)
+              (values NIL parent-name)))
+        (zippy:zip-file entry))))
+
+(defun find-id (name)
+  (let* ((end (if (char= #\/ (char name (1- (length name))))
+                  (1- (length name))
+                  (length name))))
+    (let ((slashpos (position #\/ name :from-end T :end end)))
+      (if slashpos
+          (subseq name (1+ slashpos) end)
+          (subseq name 0 end)))))
+
+(defun convert-entries (file)
+  (loop for entry across (zippy:entries file)
+        do (if (getf (first (zippy:attributes entry)) :directory)
+               (change-class entry 'zip-directory)
+               (change-class entry 'zip-file)))
+  file)
+
 (defclass zip-archive (depot:depot zippy:zip-file)
-  ((depot:depot :initarg :depot :reader depot:depot)))
-
-(defmethod depot:list-entries ((depot zip-archive))
-  (coerce (zippy:entries depot) 'list))
-
-(defmethod depot:query-entries ((depot zip-archive) &key id name type &allow-other-keys)
-  (let ((name (or id (format NIL "~a~@[.~a~]" name type))))
-    (loop for entry across (zippy:entries depot)
-          when (string= (depot:id entry) name)
-          collect entry)))
+  ((depot:depot :initarg :depot :reader depot:depot)
+   (entries :initform () :accessor entries :reader depot:list-entries)))
 
 (defmethod depot:make-entry ((depot zip-archive) &key name type id encryption-method compression-method (last-modified (get-universal-time)) comment)
   ;; FIXME: check for duplicates and error.
-  (let ((entry (make-instance 'zip-file :zip-file depot
-                                        :encryption-method encryption-method
-                                        :compression-method compression-method
-                                        :last-modified last-modified
-                                        :comment comment
-                                        :file-name (or id (format NIL "~a~@[.~a~]" name type)))))
+  (let* ((file-name (or id (format NIL "~a~@[.~a~]" name type)))
+         (entry (make-instance 'zip-file
+                               :zip-file depot
+                               :encryption-method encryption-method
+                               :compression-method compression-method
+                               :last-modified last-modified
+                               :comment comment
+                               :file-name file-name)))
     (vector-push-extend entry (zippy:entries depot))
     entry))
 
@@ -62,41 +85,40 @@
                (close disk :abort abort)))
     (setf (zippy:disks depot) NIL)))
 
-(flet ((convert-entries (file)
-         (loop for entry across (zippy:entries file)
-               do (if (getf (first (zippy:attributes entry)) :directory)
-                      (change-class entry 'zip-directory)
-                      (change-class entry 'zip-file)))
-         file))
-  (depot:define-realizer zip
-    ((file depot:file)
-     (cond ((probe-file (depot:to-pathname file))
-            (multiple-value-bind (zip-file streams) (zippy:open-zip-file (depot:to-pathname file))
-              (convert-entries (change-class zip-file 'zip-file-archive
-                                             :streams streams
-                                             :pathname (depot:to-pathname file)
-                                             :depot (depot:depot file)))))
-           ((string= "zip" (depot:attribute :type file))
-            (make-instance 'zip-file-archive :pathname (depot:to-pathname file)
-                                             :entries (make-array 0 :adjustable T :fill-pointer T)
-                                             :depot (depot:depot file)))))
-    ((entry depot:entry)
-     ;; KLUDGE: we can't use the streams interface because zippy requires file-streams (and file-length)
-     ;;         which gray streams cannot emulate. :(
-     (convert-entries (change-class (zippy:open-zip-file (depot:read-from entry 'byte)) 'zip-archive
-                                    :depot (depot:depot entry))))))
+(depot:define-realizer zip
+  ((file depot:file)
+   (cond ((probe-file (depot:to-pathname file))
+          (multiple-value-bind (zip-file streams) (zippy:open-zip-file (depot:to-pathname file))
+            (convert-entries (change-class zip-file 'zip-file-archive
+                                           :streams streams
+                                           :pathname (depot:to-pathname file)
+                                           :depot (depot:depot file)))))
+         ((string= "zip" (depot:attribute :type file))
+          (make-instance 'zip-file-archive :pathname (depot:to-pathname file)
+                                           :entries (make-array 0 :adjustable T :fill-pointer T)
+                                           :depot (depot:depot file)))))
+  ((entry depot:entry)
+   ;; KLUDGE: we can't use the streams interface because zippy requires file-streams (and file-length)
+   ;;         which gray streams cannot emulate. :(
+   (convert-entries (change-class (zippy:open-zip-file (depot:read-from entry 'byte)) 'zip-archive
+                                  :depot (depot:depot entry)))))
 
 (defclass zip-entry (zippy:zip-entry)
-  ())
+  ((id :initarg :id :accessor depot:id)
+   (depot :initarg :depot :accessor depot:depot)))
+
+(defmethod shared-initialize :after ((entry zip-entry) slots &key)
+  (unless (slot-boundp entry 'id)
+    (setf (depot:id entry) (find-id (zippy:file-name entry))))
+  (unless (slot-boundp entry 'depot)
+    (multiple-value-bind (parent name) (find-parent entry)
+      (unless parent
+        (setf parent (depot:make-entry (zippy:zip-file entry) :id name)))
+      (setf (depot:depot entry) parent)
+      (push entry (entries parent)))))
 
 (defmethod close ((entry zip-entry) &rest args)
   (apply #'close (depot:depot entry) args))
-
-(defmethod depot:depot ((entry zip-entry))
-  (zippy:zip-file entry))
-
-(defmethod depot:id ((entry zip-entry))
-  (zippy:file-name entry))
 
 (defmethod depot:attributes ((entry zip-entry))
   (destructuring-bind (file-attrs encoding system-attributes) (zippy:attributes entry)
@@ -118,36 +140,20 @@
   )
 
 (defmethod depot:delete-entry ((entry zip-entry))
+  (setf (entries (depot:depot entry))
+        (delete entry (entries (depot:depot entry))))
   (setf (zippy:entries (zippy:zip-file entry))
         (delete entry (zippy:entries (zippy:zip-file entry)))))
 
 (defclass zip-directory (zip-entry depot:depot)
-  ((name :accessor depot:id)))
-
-(defmethod shared-initialize :after ((directory zip-directory) slots &key)
-  (setf (depot:id directory) (string-right-trim "/\\" (zippy:file-name directory))))
-
-(defmethod depot:list-entries ((depot zip-directory))
-  (loop with prefix = (zippy:file-name depot)
-        for entry across (zippy:entries (zippy:zip-file depot))
-        when (and (not (eq entry depot))
-                  (starts-with prefix (zippy:file-name entry))
-                  (not (find #\/ (depot:id entry) :start (length prefix))))
-        collect entry))
-
-(defmethod depot:entry (id (depot zip-directory))
-  (loop for prefix = (format NIL "~a~a" (zippy:file-name depot) id)
-        for entry across (zippy:entries (zippy:zip-file depot))
-        do (when (string= prefix (depot:id entry))
-             (return entry))
-        finally (error 'depot:no-such-entry :object depot :id id)))
-
-(defmethod depot:entry-matches-p ((directory zip-directory) (attribute (eql :id)) value)
-  (string= value (depot:id directory)))
+  ((entries :initform () :accessor entries :reader depot:list-entries)))
 
 (defmethod depot:make-entry ((depot zip-directory) &rest args)
   (let ((name (or (getf args :id) (format NIL "~a~@[.~a~]" (getf args :name) (getf args :type)))))
     (apply #'depot:make-entry (depot:depot depot) :id (format NIL "~a~a" (zippy:file-name depot) name) args)))
+
+(defmethod depot:entry-matches-p ((depot zip-directory) (attribute (eql :id)) id)
+  (string= id (depot:id depot)))
 
 (defclass zip-file (zip-entry depot:entry)
   ())
