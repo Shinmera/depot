@@ -78,6 +78,9 @@
 (defmethod ensure-depot ((pathname pathname))
   (ensure-depot (from-pathname pathname)))
 
+(defmethod realize-entry ((pathname pathname) realizer)
+  (realize-entry (from-pathname pathname) realizer))
+
 (defclass directory (depot entry)
   ((depot :initarg :depot :reader depot)
    (pathname :initarg :pathname :reader to-pathname)))
