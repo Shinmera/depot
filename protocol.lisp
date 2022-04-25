@@ -17,6 +17,14 @@
 (defclass input-transaction (transaction) ())
 (defclass output-transaction (transaction) ())
 
+(defmethod print-object ((entry entry) stream)
+  (print-unreadable-object (entry stream :type T :identity T)
+    (format stream "~s" (id entry))))
+
+(defmethod print-object ((transaction transaction) stream)
+  (print-unreadable-object (transaction stream :type T :identity T)
+    (format stream "~s ~s" (id (target transaction)) (element-type transaction))))
+
 (defgeneric list-entries (depot))
 (defgeneric query-entries (depot &key))
 (defgeneric query-entry (depot &key))
