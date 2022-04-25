@@ -292,8 +292,7 @@
                  (let ((consumed (zippy:call-with-decompressed-buffer #'decode buffer start end decompression-state)))
                    (incf index consumed)
                    consumed)))
-        (loop until (<= target-end target-start)
-              do (zippy:call-with-decrypted-buffer #'decompress input size decryption-state)))
+        (loop until (= 0 (zippy:call-with-decrypted-buffer #'decompress input size decryption-state))))
       (setf (slot-value transaction 'index) index))
     target-start))
 
