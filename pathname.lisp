@@ -275,5 +275,10 @@
   (defmethod id ((depot device))
     (pathname-device (to-pathname depot)))
 
+  (defmethod query-entry ((depot device) &key id)
+    (if (eql id :home)
+        (from-pathname (user-homedir-pathname))
+        (call-next-method)))
+
   (defmethod depot ((depot device))
     host))
