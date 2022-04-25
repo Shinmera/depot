@@ -253,6 +253,13 @@
 ;;;;       A faster version would properly buffer and keep indices.
 (defclass transaction-stream (trivial-gray-streams:fundamental-stream)
   ((transaction :initarg :transaction :reader transaction)))
+
+(defmethod size ((stream transaction-stream))
+  (size (transaction stream)))
+
+(defmethod index ((stream transaction-stream))
+  (index (transaction stream)))
+
 (defclass transaction-input-stream (transaction-stream trivial-gray-streams:fundamental-input-stream)
   ((unread :initform NIL :accessor unread)))
 (defclass transaction-output-stream (transaction-stream trivial-gray-streams:fundamental-output-stream) ())
@@ -283,14 +290,17 @@
       (commit (transaction stream))))
 
 (defmethod trivial-gray-streams:stream-read-char ((stream transaction-stream))
-  (let ((char (unread stream)))
+  (let ((char (unread stream))
+        (tx (transaction stream)))
     (cond (char
            (setf (unread stream) NIL)
            char)
+          ((<= (size tx) (index tx))
+           :eof)
           (T
            (let ((buf (make-array 1 :element-type 'character)))
              (declare (dynamic-extent buf))
-             (read-from (transaction stream) buf)
+             (read-from tx buf)
              (aref buf 0))))))
 
 (defmethod trivial-gray-streams:stream-unread-char ((stream transaction-stream) char)
@@ -301,21 +311,26 @@
 
 (defmethod trivial-gray-streams:stream-peek-char ((stream transaction-stream))
   (let ((char (trivial-gray-streams:stream-read-char stream)))
-    (trivial-gray-streams:stream-unread-char stream char)
-    char))
+    (unless (eql :eof char)
+      (trivial-gray-streams:stream-unread-char stream char))))
 
-(defmethod trivial-gray-streams:stream-listen ((stream transaction-stream)))
+(defmethod trivial-gray-streams:stream-listen ((stream transaction-stream))
+  (let ((tx (transaction stream)))
+    (< (index tx) (size tx))))
 
 (defmethod trivial-gray-streams:stream-read-line ((stream transaction-stream))
-  (with-output-to-string (out)
-    (let ((buf (make-array 1 :element-type 'character)))
-      (declare (dynamic-extent buf))
-      (loop
-         (read-from (transaction stream) buf)
-         (let ((char (aref buf 0)))
-           (if (char= char #\Linefeed)
-               (return)
-               (write-char char out)))))))
+  (let ((buf (make-array 1 :element-type 'character))
+        (tx (transaction stream)))
+    (declare (dynamic-extent buf))
+    (values
+     (with-output-to-string (out)
+       (loop while (< (index tx) (size tx))
+             do (read-from tx buf)
+                (let ((char (aref buf 0)))
+                  (if (char= char #\Linefeed)
+                      (return)
+                      (write-char char out)))))
+     (<= (size tx) (index tx)))))
 
 (defmethod trivial-gray-streams:stream-clear-input ((stream transaction-stream))
   (abort (transaction stream)))
@@ -362,10 +377,13 @@
                  (write-to (transaction stream) buf))))))))
 
 (defmethod trivial-gray-streams:stream-read-byte ((stream transaction-stream))
-  (let ((buf (make-array 1 :element-type '(unsigned-byte 8))))
-    (declare (dynamic-extent buf))
-    (read-from (transaction stream) buf)
-    (aref buf 0)))
+  (let ((tx (transaction stream)))
+    (if (< (index tx) (size tx))
+        (let ((buf (make-array 1 :element-type '(unsigned-byte 8))))
+          (declare (dynamic-extent buf))
+          (read-from tx buf)
+          (aref buf 0))
+        :eof)))
 
 (defmethod trivial-gray-streams:stream-write-byte ((stream transaction-stream) byte)
   (let ((buf (make-array 1 :element-type '(unsigned-byte 8))))
@@ -374,12 +392,13 @@
     (write-to (transaction stream) buf)))
 
 (defmethod trivial-gray-streams:stream-read-sequence ((stream transaction-stream) seq start end &key)
-  (when (< start end)
-    (when (unread stream)
-      (setf (aref seq start) (unread stream))
-      (setf (unread stream) NIL)
-      (incf start))
-    (read-from (transaction stream) seq :start start :end end)))
+  (cond ((< start end)
+         (when (unread stream)
+           (setf (aref seq start) (unread stream))
+           (setf (unread stream) NIL)
+           (incf start))
+         (read-from (transaction stream) seq :start start :end end))
+        (T end)))
 
 (defmethod trivial-gray-streams:stream-write-sequence ((stream transaction-stream) seq start end &key)
   (write-to (transaction stream) seq :start start :end end))
