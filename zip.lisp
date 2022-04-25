@@ -159,6 +159,9 @@
 (defmethod depot:entry-matches-p ((depot zip-directory) (attribute (eql :id)) id)
   (string= id (depot:id depot)))
 
+(defmethod close ((depot zip-directory) &key abort)
+  (declare (ignore abort)))
+
 (defclass zip-file (zip-entry depot:entry)
   ())
 
