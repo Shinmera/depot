@@ -63,6 +63,7 @@
    #:define-realizer
    #:entry*
    #:with-open
+   #:with-depot
    #:ensure-depot
    #:ensure-entry
    #:stream-transaction
