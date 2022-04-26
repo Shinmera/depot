@@ -143,6 +143,9 @@
 (defmethod (setf depot:attributes) (attributes (entry zip-entry))
   )
 
+(defmethod depot:attribute ((attribute (eql :id)) (entry zip-entry))
+  (depot:id entry))
+
 (defmethod depot:delete-entry ((entry zip-entry))
   (setf (entries (depot:depot entry))
         (delete entry (entries (depot:depot entry))))
