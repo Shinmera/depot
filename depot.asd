@@ -20,5 +20,6 @@
                (:file "pathname")
                (:file "documentation"))
   :depends-on (:documentation-utils
+               :trivial-features
                :trivial-gray-streams)
   :in-order-to ((asdf:test-op (asdf:test-op :depot-test))))

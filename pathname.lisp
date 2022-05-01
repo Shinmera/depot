@@ -264,7 +264,7 @@
     *os-depot*)
 
   (defmethod list-entries ((depot host))
-    (loop for device in #-windows '(NIL) #+windows '("C")
+    (loop for device in #-windows '(NIL) #+windows (load-time-value (loop for i from (char-code #\A) to (char-code #\Z) collect (string (code-char i))))
           collect (make-instance 'device :depot depot :pathname (make-pathname :device device :directory '(:absolute)))))
 
   (defmethod query-entry ((depot host) &key device)
