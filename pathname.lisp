@@ -21,7 +21,7 @@
 (defgeneric to-pathname (entry))
 
 (defun path-component-specific-p (comp)
-  (or (eql comp NIL) (eql comp :unspecific)))
+  (not (or (eql comp NIL) (eql comp :unspecific))))
 
 (defun normalize-path-component (comp)
   (case comp
@@ -122,8 +122,8 @@
     (dolist (directory directories)
       (push (make-instance 'directory :depot depot :pathname directory) entries))
     (dolist (file files entries)
-      (unless (and (path-component-specific-p (pathname-name file))
-                   (path-component-specific-p (pathname-type file)))
+      (when (and (path-component-specific-p (pathname-name file))
+                 (path-component-specific-p (pathname-type file)))
         (push (make-instance 'file :depot depot :pathname file) entries)))))
 
 (defmethod query-entries ((depot directory) &key name type version id)
