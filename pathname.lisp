@@ -59,8 +59,9 @@
   (let ((depot *os-depot*)
         (pathname (merge-pathnames pathname *default-pathname-defaults*)))
     (setf depot (query-entry depot :host (pathname-host pathname)))
-    (when (path-component-specific-p (pathname-device pathname))
-      (setf depot (query-entry depot :device (pathname-device pathname))))
+    (if (path-component-specific-p (pathname-device pathname))
+        (setf depot (query-entry depot :device (pathname-device pathname)))
+        (setf depot (query-entry depot :device NIL)))
     (loop for dir in (rest (pathname-directory pathname))
           do (setf depot (ensure-depot (or (query-entry depot :id dir)
                                            (if create-directories
