@@ -220,6 +220,9 @@
                  (cerror "Ignore and commit anyway." 'entry-already-exists :object (depot (target transaction)) :attributes (attributes (target transaction))))
                (when (< (timestamp transaction) (file-write-date target))
                  (cerror "Ignore and commit anyway." 'write-conflict :object transaction)))
+           #+windows
+           (when (probe-file target)
+             (delete-file target))
            (rename-file source target))
       (ignore-errors
        (when (probe-file source)
