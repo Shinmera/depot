@@ -644,7 +644,9 @@ This may signal an error of type NO-SUCH-ENTRY if the entry does not
 exist.
 
 If CREATE-DIRECTORIES is true, inexistent entries along the pathname's
-directories will be created.
+directories will be created. If it is :PRETEND (the default), then the 
+directories are not actually created on the filesystem, but instead
+are virtual.
 
 Returns a FILE or DIRECTORY.
 
