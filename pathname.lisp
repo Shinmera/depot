@@ -134,6 +134,7 @@
 
 (defmethod query-entries ((depot directory) &key name type version id)
   (let ((pathname (to-pathname depot)))
+    ;; FIXME: This does not work correctly when we are on Windows and the file name is mismatched in case.
     (cond ((or version type id) ;; Can't do more with ID here since we don't know how the implementation separates name from type in a pathname. Sucks.
            (let ((entries ()))
              (dolist (file (cl:directory (make-pathname :name (or name :wild) :type (or type :wild) :version (or version #-(or allegro abcl xcl) :wild) :defaults pathname)))
