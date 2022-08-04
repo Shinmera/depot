@@ -280,7 +280,23 @@ See ENTRY")
     "Accesses a plist of attributes of the entry.
 
 Which attributes are given depends on the depot/entry used. The only
-attribute that is required is the :ID attribute.
+attribute that is required is the :ID attribute. The following
+attributes are nevertheless standardised in their purpose:
+
+  :NAME       --- The name of the entry. This excludes the type
+                  extension of the path, if there is such a concept.
+  :TYPE       --- The content type of the entry as a string.
+  :VERSION    --- The version of the entry, in case versioning
+                  information is kept.
+  :WRITE-DATE --- The universal-time timestamp at which the entry was
+                  last modified.
+  :AUTHOR     --- The user (as a string) that authored the entry.
+  :SIZE       --- The size of the readable data from the entry in
+                  octets.
+  :COMMENT    --- An arbitrary human-readable string of metadata on
+                  the entry.
+  :CRC-32     --- The CRC-32 checksum of the entry's contents as an
+                  unsigned-byte 32.
 
 When setting this place, only the attributes in the provided plist
 should be changed. Attributes are not removed using this

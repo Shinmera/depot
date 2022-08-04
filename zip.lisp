@@ -134,16 +134,20 @@
            :uncompressed-size (zippy:uncompressed-size entry)
            :encryption-method (zippy:encryption-method entry)
            :compression-method (zippy:compression-method entry)
-           :last-modified (zippy:last-modified entry)
+           :write-date (zippy:last-modified entry)
            :comment (zippy:comment entry)
            :id (depot:id entry)
            file-attrs)))
+
 
 (defmethod (setf depot:attributes) (attributes (entry zip-entry))
   )
 
 (defmethod depot:attribute ((attribute (eql :id)) (entry zip-entry))
   (depot:id entry))
+
+(defmethod depot:attribute ((attribute (eql :write-date)) (entry zip-entry))
+  (zippy:last-modified entry))
 
 (defmethod depot:delete-entry ((entry zip-entry))
   (setf (entries (depot:depot entry))
