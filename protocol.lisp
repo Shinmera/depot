@@ -216,7 +216,8 @@
       (setf start 0))
   (unless end (setf end (size tx)))
   (let ((array (make-array (- end start) :element-type '(unsigned-byte 8))))
-    (read-from tx array)
+    (loop for next = (read-from tx array) then (read-from tx array :start next)
+          until (= next end))
     array))
 
 (defmethod read-from ((tx transaction) (target (eql 'character)) &key start end (block-size 4096))

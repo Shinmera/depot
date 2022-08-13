@@ -292,14 +292,13 @@
         (index (depot:index transaction)))
     (when (< index size)
       (labels ((decode (buffer bstart bend)
-                 (let* ((available (- bend bstart))
-                        (copyable (min (- target-end target-start) available)))
+                 (let ((copyable (min (- target-end target-start) (- bend bstart))))
                    (replace sequence buffer :start1 target-start :end1 (+ target-start copyable) :start2 bstart)
                    (incf target-start copyable)
                    (+ bstart copyable)))
                (decompress (buffer start end)
                  (let ((consumed (zippy:call-with-decompressed-buffer #'decode buffer start end decompression-state)))
-                   (incf index (- start consumed))
+                   (incf index (- consumed start))
                    consumed)))
         (loop until (= 0 (zippy:call-with-decrypted-buffer #'decompress input size decryption-state))))
       (setf (slot-value transaction 'index) index))
@@ -314,7 +313,7 @@
 
 (defmethod depot:element-type ((transaction string-read-transaction)) 'character)
 
-(defmethod depot:read-from ((transaction string-write-transaction) (sequence sequence) &key start end)
+(defmethod depot:read-from ((transaction string-read-transaction) (sequence sequence) &key start end)
   ;; KLUDGE: oh god this makes me nauseous.
   (let* ((start (or start 0))
          (end (or end (length sequence)))
