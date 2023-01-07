@@ -233,11 +233,11 @@
           do (write-sequence buffer out :end (min read remaining))
              (decf remaining read))))
 
-(defmethod write-to ((entry entry) (pathname pathname) &rest args)
+(defmethod write-to ((entry entry) (pathname pathname) &rest args &key &allow-other-keys)
   (with-open (tx entry :output '(unsigned-byte 8))
     (apply #'write-to tx pathname args)))
 
-(defmethod write-to ((entry entry) (stream stream) &rest args)
+(defmethod write-to ((entry entry) (stream stream) &rest args &key &allow-other-keys)
   (with-open (tx entry :output '(unsigned-byte 8))
     (apply #'write-to tx stream args)))
 
@@ -262,16 +262,16 @@
              (decf rem read)
           while (< 0 read))))
 
-(defmethod read-from ((entry entry) (pathname pathname) &rest args)
+(defmethod read-from ((entry entry) (pathname pathname) &rest args &key &allow-other-keys)
   (with-open (tx entry :input '(unsigned-byte 8))
     (apply #'read-from tx pathname args)))
 
-(defmethod read-from ((entry entry) (stream stream) &rest args)
+(defmethod read-from ((entry entry) (stream stream) &rest args &key &allow-other-keys)
   (with-open (tx entry :input '(unsigned-byte 8))
     (apply #'read-from tx stream args)))
 
-(defmethod read-from ((tx transaction) (pathname pathname) &key start end)
-  (with-open-file (stream pathname :direction :output :element-type '(unsigned-byte 8))
+(defmethod read-from ((tx transaction) (pathname pathname) &key start end (if-exists :error))
+  (with-open-file (stream pathname :direction :output :element-type '(unsigned-byte 8) :if-exists if-exists)
     (read-from tx stream :start start :end end)))
 
 (defmethod read-from ((tx transaction) (stream stream) &key start end)
@@ -282,7 +282,8 @@
     (loop while (< 0 rem)
           for read = (read-from tx buf)
           do (write-sequence buf stream :end read)
-             (decf rem read))))
+             (decf rem read)
+          while (< 0 read))))
 
 (defclass stream-transaction (transaction)
   ((stream :initarg :stream :reader to-stream)))
