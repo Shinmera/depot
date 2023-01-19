@@ -61,7 +61,9 @@
   ;; FIXME: check for duplicates and error.
   (let* ((directory-p (or directory (eql :directory type) (char= #\/ (char (or id name) (1- (length (or id name)))))))
          (file-name (or id (format NIL "~a~@[.~a~]" name (unless (eql :directory type) type))))
-         (file-name (if directory-p (format NIL "~a/" file-name) file-name))
+         (file-name (if (and directory-p (not (char= #\/ (char file-name (1- (length file-name))))))
+                        (format NIL "~a/" file-name)
+                        file-name))
          (entry (make-instance (if directory-p 'zip-directory 'zip-file)
                                :zip-file depot
                                :encryption-method encryption-method
