@@ -59,8 +59,8 @@
 
 (defmethod depot:make-entry ((depot zip-archive) &key name directory type id encryption-method compression-method (last-modified (get-universal-time)) comment)
   ;; FIXME: check for duplicates and error.
-  (let* ((directory-p (or directory (char= #\/ (char (or id name) (1- (length (or id name)))))))
-         (file-name (or id (format NIL "~a~@[.~a~]~@[/~]" name type directory-p)))
+  (let* ((directory-p (or directory (eq :directory type) (char= #\/ (char (or id name) (1- (length (or id name)))))))
+         (file-name (or id (format NIL "~a~@[.~a~]~@[/~]" name (unless (eql :directory type) type) directory-p)))
          (entry (make-instance (if directory-p 'zip-directory 'zip-file)
                                :zip-file depot
                                :encryption-method encryption-method
