@@ -153,7 +153,7 @@
 
 (defmethod make-entry ((depot directory) &key name type id)
   (cond ((eql type :directory)
-         (make-instance 'directory :depot depot :pathname (merge-pathnames (make-pathname :directory `(:relative ,name))
+         (make-instance 'directory :depot depot :pathname (merge-pathnames (make-pathname :directory `(:relative ,(or name id)))
                                                                            (to-pathname depot))))
         (T
          (when id
@@ -209,6 +209,7 @@
 (defmethod open-entry ((file file) (direction (eql :output)) element-type &key (external-format :default))
   (let* ((pathname (to-pathname file))
          (tmp (make-pathname :name (format NIL "~a-tmp~d~d" (pathname-name pathname) (get-universal-time) (random 100)) :defaults pathname)))
+    (ensure-directories-exist tmp)
     (make-instance 'file-write-transaction :stream (open tmp :direction direction :element-type element-type :external-format external-format)
                                            :entry file
                                            :element-type element-type
