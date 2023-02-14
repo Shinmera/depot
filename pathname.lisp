@@ -229,7 +229,8 @@
                  (cerror "Ignore and commit anyway." 'write-conflict :object transaction)))
            #+windows
            (when (probe-file target)
-             (delete-file target))
+             (ignore-errors
+              (delete-file target)))
            (rename-file source target))
       (ignore-errors
        (when (probe-file source)
