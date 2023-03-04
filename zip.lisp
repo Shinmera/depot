@@ -167,7 +167,7 @@
   (setf (zippy:entries (zippy:zip-file entry))
         (delete entry (zippy:entries (zippy:zip-file entry)))))
 
-(defclass zip-directory (zip-entry depot:depot)
+(defclass zip-directory (zip-entry depot:depot depot:entry)
   ((entries :initform () :accessor entries :reader depot:list-entries)))
 
 (defmethod depot:make-entry ((depot zip-directory) &rest args &key &allow-other-keys)
