@@ -133,7 +133,7 @@
   (destructuring-bind (&optional file-attrs encoding system-attributes) (zippy:attributes entry)
     (list* :encoding encoding
            :system-attributes system-attributes
-           :name (zippy:file-name entry)
+           :name (depot:attribute :name entry)
            :crc-32 (zippy:crc-32 entry)
            :disk (zippy:disk entry)
            :size (zippy:size entry)
@@ -160,6 +160,14 @@
          (dot (position #\. name :from-end T)))
     (when (and dot (< 0 dot))
       (subseq name (1+ dot)))))
+
+(defmethod depot:attribute ((attribute (eql :name)) (entry zip-entry))
+  (let* ((name (zippy:file-name entry))
+         (slash (position #\/ name :from-end T :end (1- (length name))))
+         (dot (position #\. name :from-end T)))
+    (subseq name
+            (if slash (1+ slash) 0)
+            (if (and dot (< 0 dot)) dot (length name)))))
 
 (defmethod depot:delete-entry ((entry zip-entry))
   (setf (entries (depot:depot entry))
