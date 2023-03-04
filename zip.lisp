@@ -203,7 +203,11 @@
   :directory)
 
 (defmethod close ((depot zip-directory) &key abort)
-  (declare (ignore abort)))
+  (unless abort
+    (depot:commit depot)))
+
+(defmethod depot:commit ((depot zip-directory) &rest args)
+  (apply #'depot:commit (depot:depot depot) args))
 
 (defmethod depot:ensure-depot ((dir zip-directory))
   (depot:ensure-depot (depot:depot dir))
