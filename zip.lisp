@@ -291,7 +291,7 @@
   (unless (subtypep element-type '(unsigned-byte 8))
     (error "Only (unsigned-byte 8) is supported as element-type."))
   (let* ((disks (zippy:disks (zippy:zip-file entry)))
-         (disk (zippy:disk entry))
+         (disk (or (zippy:disk entry) 0))
          (input (or (aref disks disk)
                     (restart-case (error 'zippy:archive-file-required :disk disk)
                       (use-value (new-input)
