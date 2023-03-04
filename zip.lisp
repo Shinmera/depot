@@ -94,6 +94,16 @@
                (close disk :abort abort)))
     (setf (zippy:disks depot) NIL)))
 
+(defmethod depot:ensure-depot ((depot zip-file-archive))
+  (unless (zippy:disks depot)
+    (let ((new (zippy:open-zip-file (depot:to-pathname depot))))
+      ;; FIXME: This is REALLY BAD!!
+      ;;        If the file changed under us, none of the info in the
+      ;;        entries has been updated at all! They might have moved
+      ;;        and be invalid for reading now!
+      (setf (zippy:disks depot) (zippy:disks new))))
+  depot)
+
 (depot:define-realizer zip
   ((file depot:file)
    (cond ((probe-file (depot:to-pathname file))
@@ -190,6 +200,10 @@
 
 (defmethod close ((depot zip-directory) &key abort)
   (declare (ignore abort)))
+
+(defmethod depot:ensure-depot ((dir zip-directory))
+  (depot:ensure-depot (depot:depot dir))
+  dir)
 
 (defclass zip-file (zip-entry depot:entry)
   ())
