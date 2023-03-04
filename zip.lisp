@@ -50,10 +50,12 @@
 
 (defun convert-entries (file)
   (loop for entry across (zippy:entries file)
-        do (if (or (getf (first (zippy:attributes entry)) :directory)
-                   (ends-with "/" (zippy:file-name entry)))
-               (change-class entry 'zip-directory)
-               (change-class entry 'zip-file)))
+        do (when (or (getf (first (zippy:attributes entry)) :directory)
+                     (ends-with "/" (zippy:file-name entry)))
+               (change-class entry 'zip-directory)))
+  (loop for entry across (zippy:entries file)
+        do (unless (typep entry 'zip-directory)
+             (change-class entry 'zip-file)))
   file)
 
 (defclass zip-archive (depot:depot zippy:zip-file)
@@ -131,8 +133,10 @@
     (setf (depot:id entry) (find-id (zippy:file-name entry))))
   (unless (slot-boundp entry 'depot)
     (multiple-value-bind (parent name) (find-parent entry)
-      (unless parent
-        (setf parent (depot:make-entry (zippy:zip-file entry) :id name)))
+      (typecase parent
+        (null (setf parent (depot:make-entry (zippy:zip-file entry) :id name)))
+        (depot:depot)
+        (T (change-class parent 'zip-directory)))
       (setf (depot:depot entry) parent)
       (push entry (entries parent)))))
 
