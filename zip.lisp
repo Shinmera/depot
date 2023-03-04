@@ -22,6 +22,10 @@
   (and (<= (length prefix) (length string))
        (string= prefix string :end2 (length prefix))))
 
+(defun ends-with (suffix string)
+  (and (<= (length suffix) (length string))
+       (string= suffix string :start2 (- (length string) (length suffix)))))
+
 (defun find-parent (entry)
   (let* ((name (zippy:file-name entry))
          (end (if (char= #\/ (char name (1- (length name))))
@@ -46,11 +50,10 @@
 
 (defun convert-entries (file)
   (loop for entry across (zippy:entries file)
-        do (when (getf (first (zippy:attributes entry)) :directory)
-             (change-class entry 'zip-directory)))
-  (loop for entry across (zippy:entries file)
-        do (unless (getf (first (zippy:attributes entry)) :directory)
-             (change-class entry 'zip-file)))
+        do (if (or (getf (first (zippy:attributes entry)) :directory)
+                   (ends-with "/" (zippy:file-name entry)))
+               (change-class entry 'zip-directory)
+               (change-class entry 'zip-file)))
   file)
 
 (defclass zip-archive (depot:depot zippy:zip-file)
@@ -127,7 +130,7 @@
   (apply #'close (depot:depot entry) args))
 
 (defmethod depot:attributes ((entry zip-entry))
-  (destructuring-bind (file-attrs encoding system-attributes) (zippy:attributes entry)
+  (destructuring-bind (&optional file-attrs encoding system-attributes) (zippy:attributes entry)
     (list* :encoding encoding
            :system-attributes system-attributes
            :name (zippy:file-name entry)
@@ -140,8 +143,8 @@
            :write-date (zippy:last-modified entry)
            :comment (zippy:comment entry)
            :id (depot:id entry)
+           :type (depot:attribute :type entry)
            file-attrs)))
-
 
 (defmethod (setf depot:attributes) (attributes (entry zip-entry))
   )
@@ -151,6 +154,12 @@
 
 (defmethod depot:attribute ((attribute (eql :write-date)) (entry zip-entry))
   (zippy:last-modified entry))
+
+(defmethod depot:attribute ((attribute (eql :type)) (entry zip-entry))
+  (let* ((name (zippy:file-name entry))
+         (dot (position #\. name :from-end T)))
+    (when (and dot (< 0 dot))
+      (subseq name (1+ dot)))))
 
 (defmethod depot:delete-entry ((entry zip-entry))
   (setf (entries (depot:depot entry))
@@ -167,6 +176,9 @@
 
 (defmethod depot:entry-matches-p ((depot zip-directory) (attribute (eql :id)) id)
   (string= id (depot:id depot)))
+
+(defmethod depot:attribute ((attribute (eql :type)) (entry zip-directory))
+  :directory)
 
 (defmethod close ((depot zip-directory) &key abort)
   (declare (ignore abort)))
