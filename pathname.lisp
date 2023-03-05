@@ -102,11 +102,15 @@
   (let ((pathname (to-pathname entry)))
     (list :id (car (last (pathname-directory pathname)))
           :name (car (last (pathname-directory pathname)))
+          :type :directory
           :pathname pathname
           :author (file-author pathname))))
 
 (defmethod attribute ((name (eql :author)) (entry directory))
   (file-author (to-pathname entry)))
+
+(defmethod attribute ((name (eql :type)) (entry directory))
+  :directory)
 
 (defmethod entry (id (depot directory))
   (let ((path (merge-pathnames id (to-pathname depot))))
