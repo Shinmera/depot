@@ -95,6 +95,10 @@
   (print-unreadable-object (directory stream :type T)
     (format stream "~a" (to-pathname directory))))
 
+(defmethod make-load-form ((directory directory) &optional env)
+  (declare (ignore env))
+  `(from-pathname ,(to-pathname directory)))
+
 (defmethod id ((entry directory))
   (car (last (pathname-directory (to-pathname entry)))))
 
@@ -171,6 +175,10 @@
 (defclass file (entry)
   ((depot :initarg :depot :reader depot)
    (pathname :initarg :pathname :reader to-pathname)))
+
+(defmethod make-load-form ((file file) &optional env)
+  (declare (ignore env))
+  `(from-pathname ,(to-pathname file)))
 
 (defmethod print-object ((file file) stream)
   (print-unreadable-object (file stream :type T)
