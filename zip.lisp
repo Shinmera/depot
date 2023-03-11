@@ -140,6 +140,10 @@
       (setf (depot:depot entry) parent)
       (push entry (entries parent)))))
 
+(defmethod print-object ((entry zip-entry) stream)
+  (print-unreadable-object (entry stream :type T)
+    (format stream "~s ~a" (depot:id entry) (depot:to-pathname entry))))
+
 (defmethod close ((entry zip-entry) &rest args)
   (apply #'close (depot:depot entry) args))
 
