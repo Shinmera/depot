@@ -172,6 +172,9 @@
                  (setf name id))))
          (make-instance 'file :depot depot :pathname (make-pathname :name name :type type :defaults (to-pathname depot))))))
 
+(defmethod open-p ((directory directory))
+  T)
+
 (defclass file (entry)
   ((depot :initarg :depot :reader depot)
    (pathname :initarg :pathname :reader to-pathname)))

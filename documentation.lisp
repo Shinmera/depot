@@ -122,6 +122,7 @@ See QUERY-ENTRY
 See ENTRY
 See ENTRY-EXISTS-P
 See MAKE-ENTRY
+See OPEN-P
 See ENSURE-DEPOT")
   
   (type entry
@@ -248,6 +249,17 @@ See UNSUPPORTED-OPERATION
 See DEPOT-FULL
 See ENTRY-ALREADY-EXISTS
 See PERMISSION-DENIED")
+
+  (function open-p
+    "Returns true if the depot is considered \"open\" and ready for reading and writing.
+
+A depot may become \"closed\" by calling CLOSE on it. Once a depot is
+closed, its data may no longer be up to date, and writing and reading
+from any of its entries may fail until ENSURE-DEPOT is called on it
+to open it back up again.
+
+See DEPOT
+See ENSURE-DEPOT")
   
   (function delete-entry
     "Deletes the entry from its depot.

@@ -43,6 +43,7 @@
    #:entry
    #:entry-exists-p
    #:make-entry
+   #:open-p
    #:delete-entry
    #:entry-matches-p
    #:attributes

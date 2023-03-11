@@ -31,6 +31,7 @@
 (defgeneric entry (id depot))
 (defgeneric entry-exists-p (id depot))
 (defgeneric make-entry (depot &key))
+(defgeneric open-p (depot))
 (defgeneric delete-entry (entry))
 (defgeneric entry-matches-p (entry attribute value))
 (defgeneric attributes (entry))
@@ -111,11 +112,20 @@
          (when ,transaction (abort ,transaction))))))
 
 (defmacro with-depot ((depot init &key commit (close T)) &body body)
-  `(let ((,depot (ensure-depot ,init)))
-     (unwind-protect
-          (let ((,depot ,depot)) ,@body)
-       (when ,close
-         (close ,depot :abort (not ,commit))))))
+  (let ((openp (gensym "OPEN-P")))
+    `(let* ((,depot ,init)
+            (,openp (when (typep ,depot 'depot) (open-p ,depot)))
+            (,depot (ensure-depot ,depot)))
+       (unwind-protect
+            (let ((,depot ,depot)) ,@body)
+         (ecase ,close
+           ((NIL :never))
+           ((T :always)
+            (close ,depot :abort (not ,commit)))
+           ((:if-open)
+            (when ,openp (close ,depot :abort (not ,commit))))
+           ((:if-closed)
+            (unless ,openp (close ,depot :abort (not ,commit)))))))))
 
 (defmethod ensure-depot ((depot depot))
   depot)

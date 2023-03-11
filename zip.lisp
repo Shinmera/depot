@@ -96,6 +96,9 @@
                (close disk :abort abort)))
     (setf (zippy:disks depot) NIL)))
 
+(defmethod depot:open-p ((depot zip-file-archive))
+  (zippy:disks depot))
+
 (defmethod depot:ensure-depot ((depot zip-file-archive))
   (unless (zippy:disks depot)
     (let ((new (zippy:open-zip-file (depot:to-pathname depot))))
@@ -216,6 +219,9 @@
 (defmethod depot:ensure-depot ((dir zip-directory))
   (depot:ensure-depot (depot:depot dir))
   dir)
+
+(defmethod depot:open-p ((depot zip-directory))
+  (depot:open-p (depot:depot depot)))
 
 (defclass zip-file (zip-entry depot:entry)
   ())
