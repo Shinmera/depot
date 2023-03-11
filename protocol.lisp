@@ -110,11 +110,12 @@
          (declare (ignore e))
          (when ,transaction (abort ,transaction))))))
 
-(defmacro with-depot ((depot init &key commit) &body body)
+(defmacro with-depot ((depot init &key commit (close T)) &body body)
   `(let ((,depot (ensure-depot ,init)))
      (unwind-protect
           (let ((,depot ,depot)) ,@body)
-       (close ,depot :abort (not ,commit)))))
+       (when ,close
+         (close ,depot :abort (not ,commit))))))
 
 (defmethod ensure-depot ((depot depot))
   depot)
