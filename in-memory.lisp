@@ -1,9 +1,3 @@
-#|
- This file is a part of depot
- (c) 2020 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
-|#
-
 (defpackage #:org.shirakumo.depot.in-memory
   (:use #:cl)
   (:local-nicknames
