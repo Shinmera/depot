@@ -30,6 +30,66 @@
               (not (or (pathname-name true) (pathname-type true))))
       true)))
 
+(defmethod to-pathname ((pathname pathname))
+  pathname)
+
+(defmethod list-entries ((pathname pathname))
+  (list-entries (from-pathname pathname)))
+
+(defmethod query-entries ((pathname pathname) &rest args)
+  (apply #'query-entries (from-pathname pathname) args))
+
+(defmethod query-entry ((pathname pathname) &rest args)
+  (apply #'query-entry (from-pathname pathname) args))
+
+(defmethod entry (id (pathname pathname))
+  (entry id (from-pathname pathname)))
+
+(defmethod entry-exists-p (id (pathname pathname))
+  (entry-exists-p id (from-pathname pathname)))
+
+(defmethod make-entry ((pathname pathname) &rest args)
+  (apply #'make-entry (from-pathname pathname) args))
+
+(defmethod open-p ((pathname pathname))
+  (open-p (from-pathname pathname)))
+
+(defmethod delete-entry ((pathname pathname))
+  (delete-entry (from-pathname pathname)))
+
+(defmethod entry-matches-p ((pathname pathname) attribute value)
+  (entry-matches-p (from-pathname pathname) attribute value))
+
+(defmethod attributes ((pathname pathname))
+  (attributes (from-pathname pathname)))
+
+(defmethod (setf attributes) (attributes (pathname pathname))
+  (setf (attributes (from-pathname pathname)) attributes))
+
+(defmethod attribute (name (pathname pathname))
+  (attribute (from-pathname pathname)))
+
+(defmethod (setf attribute) (value name (pathname pathname))
+  (setf (attribute name (from-pathname pathname)) value))
+
+(defmethod id ((pathname pathname))
+  pathname)
+
+(defmethod depot ((pathname pathname))
+  (depot (from-pathname pathname)))
+
+(defmethod realize-entry ((pathname pathname) realizer)
+  (realize-entry (from-pathname pathname) realizer))
+
+(defmethod ensure-depot ((pathname pathname))
+  (ensure-depot (from-pathname pathname)))
+
+(defmethod ensure-entry (id (pathname pathname) &rest attributes)
+  (apply #'ensure-entry id (from-pathname pathname) attributes))
+
+(defmethod open-entry ((pathname pathname) direction element-type &rest args)
+  (apply #'open-entry (from-pathname pathname) direction element-type args))
+
 (defmethod to-pathname ((entry entry))
   (let* ((name (id entry))
          (dotp (position #\. name :from-end T))
