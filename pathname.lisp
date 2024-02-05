@@ -87,8 +87,9 @@
 (defmethod ensure-entry (id (pathname pathname) &rest attributes)
   (apply #'ensure-entry id (from-pathname pathname) attributes))
 
-(defmethod open-entry ((pathname pathname) direction element-type &rest args)
-  (apply #'open-entry (from-pathname pathname) direction element-type args))
+(defmethod open-entry ((pathname pathname) direction element-type &rest args &key (if-does-not-exist :create))
+  (remf args :if-does-not-exist)
+  (apply #'open-entry (from-pathname pathname :if-does-not-exist if-does-not-exist) direction element-type args))
 
 (defmethod to-pathname ((entry entry))
   (let* ((name (id entry))
@@ -109,7 +110,7 @@
     (make-pathname :host host :device device :directory (list* :absolute (nreverse dirs))
                    :name name :type type :version (ignore-errors (attribute :version entry)))))
 
-(defun from-pathname (pathname &key (create-directories :pretend))
+(defun from-pathname (pathname &key (create-directories :pretend) (if-does-not-exist :create))
   (let ((depot *os-depot*)
         (pathname (merge-pathnames pathname *default-pathname-defaults*)))
     (setf depot (query-entry depot :host (pathname-host pathname)))
@@ -131,8 +132,11 @@
         (or (query-entry depot :name (pathname-name pathname)
                                :type (pathname-type pathname)
                                :version (pathname-version pathname))
-            (make-entry depot :name (pathname-name pathname)
-                              :type (pathname-type pathname)))
+            (ecase if-does-not-exist
+              (:create (make-entry depot :name (pathname-name pathname)
+                                         :type (pathname-type pathname)))
+              (:error (error 'no-such-entry :id (file-namestring pathname) :object depot))
+              ((NIL) NIL)))
         depot)))
 
 (defmethod ensure-depot ((pathname pathname))

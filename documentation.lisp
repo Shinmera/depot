@@ -662,15 +662,17 @@ See FROM-PATHNAME")
   (function from-pathname
     "Returns an entry corresponding to the given pathname.
 
-This may signal an error of type NO-SUCH-ENTRY if the entry does not
-exist.
-
 If CREATE-DIRECTORIES is true, inexistent entries along the pathname's
 directories will be created. If it is :PRETEND (the default), then the 
 directories are not actually created on the filesystem, but instead
 are virtual.
 
-Returns a FILE or DIRECTORY.
+IF-DOES-NOT-EXIST may be one of the following:
+  :CREATE -- Returns a fresh entry via MAKE-ENTRY if it does not exist
+  :ERROR  -- Signals a NO-SUCH-ENTRY error if it does not exist
+  NIL     -- Returns NIL if it does not exist
+
+Returns a FILE or DIRECTORY if successful.
 
 See TO-PATHNAME
 See FILE
