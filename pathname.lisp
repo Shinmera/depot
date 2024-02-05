@@ -282,16 +282,24 @@
   ((timestamp :initarg :timestamp :reader timestamp)))
 
 (defclass file-write-transaction (file-transaction output-transaction)
-  ())
+  ((if-exists :initarg :if-exists :reader if-exists)))
 
-(defmethod open-entry ((file file) (direction (eql :output)) element-type &key (external-format :default))
+(defmethod open-entry ((file file) (direction (eql :output)) element-type &key (external-format :default) (if-exists :supersede))
   (let* ((pathname (to-pathname file))
          (tmp (make-pathname :name (format NIL "~a-tmp~d~d" (pathname-name pathname) (get-universal-time) (random 100)) :defaults pathname)))
+    (ecase if-exists
+      ((:replace :supersede :overwrite))
+      ((NIL)
+       (return-from open-entry NIL))
+      (:error
+       (when (probe-file pathname)
+         (error #+sbcl 'sb-ext:file-exists #-sbcl 'file-error :pathname pathname))))
     (ensure-directories-exist tmp)
     (make-instance 'file-write-transaction :stream (open tmp :direction direction :element-type element-type :external-format external-format)
                                            :entry file
                                            :element-type element-type
-                                           :timestamp (when (probe-file pathname) (file-write-date pathname)))))
+                                           :timestamp (when (probe-file pathname) (file-write-date pathname))
+                                           :if-exists if-exists)))
 
 ;; FIXME: testing for changes via timestamp only is error prone.
 (defmethod commit ((transaction file-write-transaction) &key)
@@ -300,11 +308,15 @@
         (source (pathname (to-stream transaction))))
     (unwind-protect
          (progn
-           (if (null (timestamp transaction))
-               (when (probe-file target)
-                 (cerror "Ignore and commit anyway." 'entry-already-exists :object (depot (target transaction)) :attributes (attributes (target transaction))))
-               (when (< (timestamp transaction) (file-write-date target))
-                 (cerror "Ignore and commit anyway." 'write-conflict :object transaction)))
+           (ecase (if-exists transaction)
+             (:error
+              (if (null (timestamp transaction))
+                  (when (probe-file target)
+                    (cerror "Ignore and commit anyway." 'entry-already-exists :object (depot (target transaction)) :attributes (attributes (target transaction))))
+                  (when (< (timestamp transaction) (file-write-date target))
+                    (cerror "Ignore and commit anyway." 'write-conflict :object transaction))))
+             ((:overwrite :supersede :replace))
+             ((NIL) (return-from commit NIL)))
            #+windows
            (when (probe-file target)
              (ignore-errors
@@ -321,12 +333,14 @@
 (defclass file-read-transaction (file-transaction input-transaction)
   ())
 
-(defmethod open-entry ((file file) (direction (eql :input)) element-type &key (external-format :default))
-  (let ((pathname (to-pathname file)))
-    (make-instance 'file-read-transaction :stream (open pathname :direction direction :element-type element-type :external-format external-format)
-                                          :entry file
-                                          :element-type element-type
-                                          :timestamp (file-write-date pathname))))
+(defmethod open-entry ((file file) (direction (eql :input)) element-type &key (external-format :default) (if-does-not-exist :error))
+  (let* ((pathname (to-pathname file))
+         (stream (open pathname :direction direction :element-type element-type :external-format external-format :if-does-not-exist if-does-not-exist)))
+    (when stream
+      (make-instance 'file-read-transaction :stream stream
+                                            :entry file
+                                            :element-type element-type
+                                            :timestamp (file-write-date pathname)))))
 
 (defmethod commit ((transaction file-read-transaction) &key)
   (call-next-method)

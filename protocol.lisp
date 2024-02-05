@@ -97,8 +97,9 @@
               (multiple-value-prog1
                   (let ((,transaction ,transaction))
                     ,@body)
-                (commit ,transaction)
-                (setf ,transaction NIL))
+                (when ,transaction
+                  (commit ,transaction)
+                  (setf ,transaction NIL)))
            (when ,transaction (abort ,transaction)))
        (abort (&optional e)
          :report "Abort the entry open."
