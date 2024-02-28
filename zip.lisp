@@ -8,7 +8,8 @@
    #:zip-archive
    #:zip-entry
    #:zip-directory
-   #:zip-file))
+   #:zip-file
+   #:from-pathname))
 
 (in-package #:org.shirakumo.depot.zip)
 
@@ -102,6 +103,14 @@
       ;;        and be invalid for reading now!
       (setf (zippy:disks depot) (zippy:disks new))))
   depot)
+
+(defun from-pathname (pathname)
+  (let ((pathname (pathname pathname)))
+    (make-instance 'zip-file-archive
+                   :pathname pathname
+                   :entries (make-array 0 :adjustable T :fill-pointer T)
+                   :depot (depot:from-pathname (make-pathname :name NIL :type NIL :defaults pathname)
+                                               :create-directories T))))
 
 (depot:define-realizer zip
   ((file depot:file)
