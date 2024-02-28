@@ -95,7 +95,8 @@
   (zippy:disks depot))
 
 (defmethod depot:ensure-depot ((depot zip-file-archive))
-  (unless (zippy:disks depot)
+  (when (and (not (zippy:disks depot))
+             (probe-file (depot:to-pathname depot)))
     (let ((new (zippy:open-zip-file (depot:to-pathname depot))))
       ;; FIXME: This is REALLY BAD!!
       ;;        If the file changed under us, none of the info in the
