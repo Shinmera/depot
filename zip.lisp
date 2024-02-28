@@ -292,6 +292,10 @@
   (let ((sub (depot:open-entry entry direction '(unsigned-byte 8) :password password)))
     (change-class sub 'string-write-transaction :external-format external-format)))
 
+(defmethod depot:open-entry ((entry zip-entry) (direction (eql :output)) (element-type (eql 'base-char)) &key password (external-format :ascii))
+  (let ((sub (depot:open-entry entry direction '(unsigned-byte 8) :password password)))
+    (change-class sub 'string-write-transaction :external-format external-format)))
+
 (defclass string-write-transaction (write-transaction)
   ((external-format :initarg :external-format :initform :utf-8 :accessor external-format)))
 
