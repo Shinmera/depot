@@ -317,7 +317,7 @@
                     (cerror "Ignore and commit anyway." 'write-conflict :object transaction))))
              ((:overwrite :supersede :replace))
              ((NIL) (return-from commit NIL)))
-           #+windows
+           #+(or windows nx)
            (when (probe-file target)
              (ignore-errors
               (delete-file target)))
