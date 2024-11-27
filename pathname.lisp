@@ -125,7 +125,7 @@
         (loop for dir in (rest (pathname-directory pathname))
               do (setf depot (ensure-depot (or (query-entry depot :id dir)
                                                (if create-directories
-                                                   (make-entry depot :name dir)
+                                                   (make-entry depot :name dir :type :directory)
                                                    (error 'no-such-entry :object depot :id dir)))))))
     (if (or (pathname-name pathname)
             (pathname-type pathname))
