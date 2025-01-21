@@ -83,13 +83,13 @@
     depot))
 
 (defmethod close ((depot zip-file-archive) &key abort)
+  (unless abort
+    (depot:commit depot))
   (when (zippy:disks depot)
     (loop for disk across (zippy:disks depot)
           do (when (streamp disk)
                (close disk :abort abort)))
-    (setf (zippy:disks depot) NIL))
-  (unless abort
-    (depot:commit depot)))
+    (setf (zippy:disks depot) NIL)))
 
 (defmethod depot:open-p ((depot zip-file-archive))
   (zippy:disks depot))
