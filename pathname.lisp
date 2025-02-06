@@ -302,7 +302,7 @@
                                            :if-exists if-exists)))
 
 ;; FIXME: testing for changes via timestamp only is error prone.
-(defmethod commit ((transaction file-write-transaction) &key)
+(defmethod commit ((transaction file-write-transaction) &key (rename-to-target T))
   (call-next-method)
   (let ((target (to-pathname (target transaction)))
         (source (pathname (to-stream transaction))))
@@ -321,9 +321,11 @@
            (when (probe-file target)
              (ignore-errors
               (delete-file target)))
-           (rename-file source target))
+           (if rename-to-target
+               (rename-file source target)
+               source))
       (ignore-errors
-       (when (probe-file source)
+       (when (and rename-to-target (probe-file source))
          (delete-file source))))))
 
 (defmethod abort ((transaction file-write-transaction) &key)

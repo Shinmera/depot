@@ -78,9 +78,22 @@
   ((streams :initarg :streams :initform () :reader streams)))
 
 (defmethod depot:commit ((depot zip-file-archive) &key password)
-  (depot:with-open (tx depot :output '(unsigned-byte 8))
-    (zippy:compress-zip depot (depot:to-stream tx) :password password)
-    depot))
+  ;; Special fumbling. If the disks are open, some systems won't allow us
+  ;; to replace the disk file. However, we have to keep the disk file open
+  ;; during the TX to allow copying existing entries. So, in order to avoid
+  ;; the conflict, we have to close first
+  (let ((tx (depot:open-entry depot :output '(unsigned-byte 8))))
+    (unwind-protect
+         (progn
+           (zippy:compress-zip depot (depot:to-stream tx) :password password)
+           (let ((target (depot:commit tx :rename-to-target NIL)))
+             (when (zippy:disks depot)
+               (loop for disk across (zippy:disks depot)
+                     do (when (streamp disk) (close disk)))
+               (setf (zippy:disks depot) NIL))
+             (rename-file target (depot:to-pathname depot))
+             (setf tx NIL)))
+      (when tx (depot:abort tx)))))
 
 (defmethod close ((depot zip-file-archive) &key abort)
   (unless abort
