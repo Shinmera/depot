@@ -200,6 +200,13 @@
 (defmethod id ((entry entry))
   (attribute :id entry))
 
+(defmethod write-to (target (source entry) &rest args &key &allow-other-keys)
+  (with-open (tx source :input '(unsigned-byte 8))
+    (apply #'write-to target tx args)))
+
+(defmethod write-to (target (source transaction) &rest args &key &allow-other-keys)
+  (apply #'write-to target (to-stream source) args))
+
 (defmethod write-to ((entry entry) (target vector) &rest args &key &allow-other-keys)
   (with-open (tx entry :output (array-element-type target))
     (apply #'write-to tx target args)))
